@@ -7,3 +7,5 @@ scene: git_message
 使用中文编写提交信息
 格式如下：
 类型: 简短描述 - 提交人姓名
+比如：
+feat: 新增登录功能 - Zichen Zou
