@@ -12,7 +12,7 @@
 
    - Windows 可以用 `git --version` 检查是否下载
 
-     <img src="Github协作详细教程.assets/image-20260516123228753.png" alt="image-20260516123228753" style="zoom: 65%;" align="left"/>
+     ![image-20260516123228753](Github协作详细教程.assets/image-20260516123228753.png)
 
 3. **配置身份信息**（终端执行一次）：
 
@@ -27,7 +27,7 @@
 
    1. 找一个路径放你的项目，到该路径下打开cmd（可以在地址栏输cmd+回车）：
 
-      <img src="Github协作详细教程.assets/image-20260516125157813.png" alt="image-20260516125157813" style="zoom: 40%;" align="left"/>
+      ![image-20260516125157813](Github协作详细教程.assets/image-20260516125157813.png)
 
    2. 运行下面的代码：
 
@@ -39,7 +39,7 @@
 
    这就是成功了，可以在本地看到克隆下来的仓库：
 
-   <img src="Github协作详细教程.assets/image-20260516125348329.png" alt="image-20260516125348329" style="zoom: 35%;" align="left"/>
+   ![image-20260516125348329](Github协作详细教程.assets/image-20260516125348329.png)
 
 ***
 
@@ -47,7 +47,7 @@
 
 1. 在仓库的路径下打开cmd（在地址栏输cmd+回车）：
 
-   <img src="Github协作详细教程.assets/image-20260516125724276.png" alt="image-20260516125724276" style="zoom: 45%;" align="left"/>
+   ![image-20260516125724276](Github协作详细教程.assets/image-20260516125724276.png)
 
 2. 切换回主分支（`main`分支）：
 
@@ -55,7 +55,7 @@
    git checkout main
    ```
 
-   <img src="Github协作详细教程.assets/image-20260516125819626.png" alt="image-20260516125819626" style="zoom: 75%;" align="left"/>
+   ![image-20260516125819626](Github协作详细教程.assets/image-20260516125819626.png)
 
    如果刚克隆过来默认就是在`main`分支的，所以会看到`Already on 'main' Your branch is up to date with 'origin/main'.`的提示。但日后切换分支以后需要这一步切换回来才能进行后面的拉取操作。
 
@@ -65,7 +65,7 @@
    git pull origin main
    ```
 
-   <img src="Github协作详细教程.assets/image-20260516130045137.png" alt="image-20260516130045137" style="zoom: 75%;" align="left"/>
+   ![image-20260516130045137](Github协作详细教程.assets/image-20260516130045137.png)
 
    这一步是为了每次开始协作之前自己的仓库都是最新的。
 
@@ -114,7 +114,7 @@
 
    如果是用可视化界面，可以点击更改旁边的+号按钮：
 
-   <img src="Github协作详细教程.assets/image-20260516133044339.png" alt="image-20260516133044339" style="zoom: 40%;" align="left"/>
+   ![image-20260516133044339](Github协作详细教程.assets/image-20260516133044339.png)
 
    如果要用命令行，可以执行下面的命令：
 
@@ -126,7 +126,7 @@
 
    要注意看Commit编写规范.md！！！如果你跟我一样是用的trae，可以点击旁边的ai总结按钮，它会根据你的修改自动总结并填进去（我已经把编写规范放在仓库里了，它编写完检查一遍没问题就可以直接用了，一般ai编写的都是规范的）
 
-   <img src="Github协作详细教程.assets/image-20260516133340599.png" alt="image-20260516133340599" style="zoom: 40%;" align="left"/>
+   ![image-20260516133340599](Github协作详细教程.assets/image-20260516133340599.png)
 
    再点击提交按钮即可。
 
@@ -140,17 +140,17 @@
 
 9. 推送到远程仓库：
 
-   <img src="Github协作详细教程.assets/image-20260516142553221.png" alt="image-20260516142553221" style="zoom: 35%;" align="left"/>
+   ![image-20260516142553221](Github协作详细教程.assets/image-20260516142553221.png)
 
 10. 回到GitHub界面发起pull request(PR)：
 
     上一步成功推送以后GitHub界面会出现这个提示，这个点击按钮。
 
-    <img src="Github协作详细教程.assets/image-20260516142952476.png" alt="image-20260516142952476" style="zoom: 70%;" align="left"/>
+    ![image-20260516142952476](Github协作详细教程.assets/image-20260516142952476.png)
 
     点击“Create pull request”
 
-    <img src="Github协作详细教程.assets/image-20260516143055322.png" alt="image-20260516143055322" style="zoom: 40%;" align="left"/>
+    ![image-20260516143055322](Github协作详细教程.assets/image-20260516143055322.png)
 
     发起成功后就等待组长审核就可以了（组员如果收到通知不要去审核，组长统一审核就好）
 
