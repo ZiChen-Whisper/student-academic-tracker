@@ -1,0 +1,570 @@
+<mxfile host="Electron">
+  <diagram name="合并ER图" id="merged-er-diagram">
+    <mxGraphModel dx="3310" dy="2167" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sC0h2NIehoYArikVgkJi-5" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="920" width="2270" x="515" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="E_STUDENT" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="STUDENT" vertex="1">
+          <mxGeometry height="50" width="140" x="700" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="E_CLASS" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="CLASS" vertex="1">
+          <mxGeometry height="50" width="120" x="1350" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="E_FAMILY" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="FAMILY_BACKGROUND" vertex="1">
+          <mxGeometry height="50" width="210" x="344" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="E_EXAM" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="EXAM_SCORE" vertex="1">
+          <mxGeometry height="50" width="140" x="1630" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SUGGESTION" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="LEARNING_SUGGESTION" vertex="1">
+          <mxGeometry height="50" width="210" x="970" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SUBJECT" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="SUBJECT" vertex="1">
+          <mxGeometry height="50" width="130" x="1890" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="E_BEHAVIOR" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="LEARNING_BEHAVIOR" vertex="1">
+          <mxGeometry height="50" width="200" x="350" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="E_RISK" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="RISK_ALERT" vertex="1">
+          <mxGeometry height="50" width="130" x="140" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SCHEDULE" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="COURSE_SCHEDULE" vertex="1">
+          <mxGeometry height="50" width="180" x="1580" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="E_TEACHER" parent="sC0h2NIehoYArikVgkJi-5" style="rounded=0;whiteSpace=wrap;html=1;align=center;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="TEACHER" vertex="1">
+          <mxGeometry height="50" width="130" x="1800" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentID" vertex="1">
+          <mxGeometry height="40" width="110" x="510" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SNAME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentName" vertex="1">
+          <mxGeometry height="40" width="120" x="630" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SGENDER" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentGender" vertex="1">
+          <mxGeometry height="40" width="130" x="760" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SGRADE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentGrade" vertex="1">
+          <mxGeometry height="40" width="120" x="510" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCLASSID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentClassID" vertex="1">
+          <mxGeometry height="40" width="140" x="640" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SADDR" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentAddress" vertex="1">
+          <mxGeometry height="40" width="130" x="790" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_STUDENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SNAME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SNAME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_STUDENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SGENDER" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SGENDER" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_STUDENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SGRADE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SGRADE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_STUDENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCLASSID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCLASSID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_STUDENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SADDR" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SADDR" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_STUDENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ClassID" vertex="1">
+          <mxGeometry height="40" width="100" x="1580" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CNAME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ClassName" vertex="1">
+          <mxGeometry height="40" width="110" x="1180" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CGRADE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ClassGrade" vertex="1">
+          <mxGeometry height="40" width="110" x="1300" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CTEACHERID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ClassTeacherID" vertex="1">
+          <mxGeometry height="40" width="140" x="1420" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_CID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_CID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_CLASS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_CNAME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_CNAME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_CLASS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_CGRADE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_CGRADE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_CLASS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_CTEACHERID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_CTEACHERID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_CLASS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="FamilyID" vertex="1">
+          <mxGeometry height="40" width="100" x="164" y="725" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FSID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentID" vertex="1">
+          <mxGeometry height="40" width="100" x="324" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FATHEREDU" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="FatherEdu" vertex="1">
+          <mxGeometry height="40" width="100" x="454" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="A_MOTHEREDU" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="MotherEdu" vertex="1">
+          <mxGeometry height="40" width="110" x="584" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FAMREL" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="Famrel" vertex="1">
+          <mxGeometry height="40" width="90" x="704" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PINVOLVE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ParentalInvolvement" vertex="1">
+          <mxGeometry height="40" width="150" x="144" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FINCOME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="FamilyIncome" vertex="1">
+          <mxGeometry height="40" width="120" x="314" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FSUPPORT" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="FamilySupport" vertex="1">
+          <mxGeometry height="40" width="130" x="454" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FJOB" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="FatherJob" vertex="1">
+          <mxGeometry height="40" width="100" x="604" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="A_MJOB" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="MotherJob" vertex="1">
+          <mxGeometry height="40" width="110" x="724" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FSID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FSID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FATHEREDU" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FATHEREDU" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_MOTHEREDU" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_MOTHEREDU" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FAMREL" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FAMREL" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_PINVOLVE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_PINVOLVE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FINCOME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FINCOME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FSUPPORT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FSUPPORT" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_FJOB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_FJOB" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_MJOB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_MJOB" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ScoreID" vertex="1">
+          <mxGeometry height="40" width="100" x="1490" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SSID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentID" vertex="1">
+          <mxGeometry height="40" width="110" x="1550" y="275" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SUBNAME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SubjectName" vertex="1">
+          <mxGeometry height="40" width="120" x="1680" y="275" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ESTAGE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ExamStage" vertex="1">
+          <mxGeometry height="40" width="110" x="1485" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCORE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="Score" vertex="1">
+          <mxGeometry height="40" width="90" x="1550" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EDATE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ExamDate" vertex="1">
+          <mxGeometry height="40" width="110" x="1720" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SSID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SSID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SUBNAME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SUBNAME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_ESTAGE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_ESTAGE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCORE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCORE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_EDATE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_EDATE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SGID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SuggestionID" vertex="1">
+          <mxGeometry height="40" width="130" x="810" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SGSID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentID" vertex="1">
+          <mxGeometry height="40" width="110" x="810" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SBEFORE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ScoreBefore" vertex="1">
+          <mxGeometry height="40" width="120" x="1260" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SAFTER" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ScoreAfter" vertex="1">
+          <mxGeometry height="40" width="110" x="1240" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCONTENT" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SuggestionContent" vertex="1">
+          <mxGeometry height="40" width="150" x="950" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SFEEDBACK" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentFeedback" vertex="1">
+          <mxGeometry height="40" width="140" x="1110" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SGENTIME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="GenerateTime" vertex="1">
+          <mxGeometry height="40" width="130" x="930" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SFBTIME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="FeedbackTime" vertex="1">
+          <mxGeometry height="40" width="130" x="1100" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SGID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SGID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SGSID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SGSID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SBEFORE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SBEFORE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SAFTER" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SAFTER" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCONTENT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCONTENT" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SFEEDBACK" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SFEEDBACK" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SGENTIME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SGENTIME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SFBTIME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SFBTIME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SUBID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SubjectID" vertex="1">
+          <mxGeometry height="40" width="110" x="1780" y="142.5" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SUBNAME2" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SubjectName" vertex="1">
+          <mxGeometry height="40" width="130" x="2020" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SUBCREDIT" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SubjectCredit" vertex="1">
+          <mxGeometry height="40" width="100" x="1770" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SUBTEACHER" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SubjectTeacher" vertex="1">
+          <mxGeometry height="40" width="130" x="1760" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SUBTYPE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SubjectType" vertex="1">
+          <mxGeometry height="40" width="130" x="2020" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SUBID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SUBID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SUBNAME2" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SUBNAME2" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SUBCREDIT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SUBCREDIT" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SUBTEACHER" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SUBTEACHER" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SUBTYPE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SUBTYPE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_BSID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentID" vertex="1">
+          <mxGeometry height="35" width="100" x="165" y="277.5" as="geometry" />
+        </mxCell>
+        <mxCell id="A_BID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="BehaviorID" vertex="1">
+          <mxGeometry height="35" width="110" x="150" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="A_STUDYHRS" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudyHours" vertex="1">
+          <mxGeometry height="35" width="110" x="320" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="A_MOTIVATION" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="MotivationLevel" vertex="1">
+          <mxGeometry height="35" width="140" x="600" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SLEEPHRS" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SleepHours" vertex="1">
+          <mxGeometry height="35" width="110" x="760" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PREVSCORE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="PreviousScore" vertex="1">
+          <mxGeometry height="35" width="120" x="110" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PHYACT" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="PhysicalActivity" vertex="1">
+          <mxGeometry height="35" width="130" x="220" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TUTORING" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="TutoringSessions" vertex="1">
+          <mxGeometry height="35" width="150" x="440" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="A_INET" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="InternetAccess" vertex="1">
+          <mxGeometry height="35" width="120" x="660" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EXTRACUR" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="Extracurricular" vertex="1">
+          <mxGeometry height="35" width="130" x="710" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ATTEND" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="AttendanceRate" vertex="1">
+          <mxGeometry height="35" width="130" x="690" y="277.5" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_BSID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_BSID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_BID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_BID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_STUDYHRS" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_STUDYHRS" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_MOTIVATION" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_MOTIVATION" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SLEEPHRS" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SLEEPHRS" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_PREVSCORE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_PREVSCORE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_PHYACT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_PHYACT" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_TUTORING" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_TUTORING" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_INET" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_INET" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_EXTRACUR" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_EXTRACUR" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_ATTEND" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_ATTEND" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ALID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="AlertID" vertex="1">
+          <mxGeometry height="40" width="90" x="80" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="A_RSID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="StudentID" vertex="1">
+          <mxGeometry height="40" width="90" x="20" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="A_RLEVEL" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="RiskLevel" vertex="1">
+          <mxGeometry height="40" width="90" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ALTIME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="AlertTime" vertex="1">
+          <mxGeometry height="40" width="100" x="75" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="A_RFEAT" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="RiskFeatures" vertex="1">
+          <mxGeometry height="40" width="110" x="220" y="545" as="geometry" />
+        </mxCell>
+        <mxCell id="A_IRESULT" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="InterventionResult" vertex="1">
+          <mxGeometry height="40" width="140" x="180" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="A_IMEASURE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="InterventionMeasure" vertex="1">
+          <mxGeometry height="40" width="150" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ISTATUS" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="InterventionStatus" vertex="1">
+          <mxGeometry height="40" width="140" x="135" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_ALID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_ALID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_RSID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_RSID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_RLEVEL" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_RLEVEL" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_ALTIME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_ALTIME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_RFEAT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_RFEAT" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_IRESULT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_IRESULT" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_IMEASURE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_IMEASURE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_ISTATUS" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_ISTATUS" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCHEID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ScheduleID" vertex="1">
+          <mxGeometry height="40" width="120" x="1530" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCHDAY" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ScheduleDay" vertex="1">
+          <mxGeometry height="40" width="120" x="1670" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCHPERIOD" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="SchedulePeriod" vertex="1">
+          <mxGeometry height="40" width="130" x="1480" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SCHROOM" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="ScheduleClassroom" vertex="1">
+          <mxGeometry height="40" width="150" x="1630" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCHEID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCHEID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SCHEDULE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCHDAY" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCHDAY" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SCHEDULE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCHPERIOD" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCHPERIOD" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SCHEDULE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_SCHROOM" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_SCHROOM" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_SCHEDULE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TID" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="TeacherID" vertex="1">
+          <mxGeometry height="40" width="110" x="1720" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TNAME" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="TeacherName" vertex="1">
+          <mxGeometry height="40" width="120" x="1850" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TGENDER" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="TeacherGender" vertex="1">
+          <mxGeometry height="40" width="130" x="1990" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TTITLE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="TeacherTitle" vertex="1">
+          <mxGeometry height="40" width="120" x="1720" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TPHONE" parent="sC0h2NIehoYArikVgkJi-5" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" value="TeacherPhone" vertex="1">
+          <mxGeometry height="40" width="130" x="1860" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_TID" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_TID" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_TEACHER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_TNAME" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_TNAME" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_TEACHER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_TGENDER" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_TGENDER" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_TEACHER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_TTITLE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_TTITLE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_TEACHER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AE_TPHONE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="A_TPHONE" style="endArrow=none;html=1;rounded=0;strokeColor=#999999;" target="E_TEACHER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R_STUDYCLASS" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" value="StudentStudyInClass" vertex="1">
+          <mxGeometry height="70" width="210" x="970" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="R_FAMILY" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="StudentHasFamilyBackground" vertex="1">
+          <mxGeometry height="70" width="200" x="350" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="R_HASSCORE" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" value="HasScore" vertex="1">
+          <mxGeometry height="70" width="210" x="970" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="R_RECEIVESUGG" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="StudentReceiveSuggestion" vertex="1">
+          <mxGeometry height="70" width="210" x="970" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="R_HASBEHAVIOR" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="StudentHaveLearningBehavior" vertex="1">
+          <mxGeometry height="70" width="200" x="350" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="R_RISKALERT" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="StudentReceiveRiskAlert" vertex="1">
+          <mxGeometry height="70" width="200" x="350" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="R_BELONGSUB" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" value="BelongSubject" vertex="1">
+          <mxGeometry height="70" width="210" x="1850" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="R_SUGGSCORE" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="SuggestionRelateScore" vertex="1">
+          <mxGeometry height="70" width="190" x="1360" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="R_CLASSSCHED" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" value="ClassHasSchedule" vertex="1">
+          <mxGeometry height="70" width="200" x="1310" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="R_SCHEDSUB" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="ScheduleBelongsTo" vertex="1">
+          <mxGeometry height="70" width="210" x="1850" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="R_TEACHSUB" parent="sC0h2NIehoYArikVgkJi-5" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="TeacherTeachSubject" vertex="1">
+          <mxGeometry height="70" width="190" x="2080" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_STU_STUDYCLASS" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_STUDENT" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERzeroToMany;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="R_STUDYCLASS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_STUDYCLASS_CLASS" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_STUDYCLASS" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERmandOne;endFill=0;startArrow=none;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="E_CLASS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_STU_FAMILY" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_STUDENT" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="R_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_FAMILY_FAM" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_FAMILY" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERmandOne;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="E_FAMILY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_STU_HASSCORE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_STUDENT" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0;exitDx=0;exitDy=0;edgeStyle=entityRelationEdgeStyle;" target="R_HASSCORE">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805" y="510" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_HASSCORE_EXAM" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_HASSCORE" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERzeroToMany;endFill=0;startArrow=none;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1250" y="285" />
+              <mxPoint x="1250" y="410" />
+              <mxPoint x="2020" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_STU_RECEIVESUGG" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_STUDENT" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=1;exitDx=0;exitDy=0;" target="R_RECEIVESUGG">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="530" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_RECEIVESUGG_SUGG" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_RECEIVESUGG" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERzeroToMany;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="E_SUGGESTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_STU_HASBEHAVIOR" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_STUDENT" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="R_HASBEHAVIOR">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="735" y="400" />
+              <mxPoint x="630" y="400" />
+              <mxPoint x="630" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_HASBEHAVIOR_BEH" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_HASBEHAVIOR" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERmandOne;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="E_BEHAVIOR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_STU_RISKALERT" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_STUDENT" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="R_RISKALERT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_RISKALERT_RISK" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_RISKALERT" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERzeroToMany;endFill=0;startArrow=none;startFill=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" target="E_RISK">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="330" y="460" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_EXAM_BELONGSUB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_EXAM" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERzeroToMany;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="R_BELONGSUB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_BELONGSUB_SUB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_BELONGSUB" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERmandOne;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2140" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_SUGG_SUGGSCORE" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_SUGGESTION" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERzeroToMany;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="R_SUGGSCORE">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="830" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_SUGGSCORE_EXAM" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_SUGGSCORE" style="edgeStyle=orthogonalEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERzeroToMany;endFill=0;startArrow=none;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="E_EXAM">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1870" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_CLASS_CLASSSCHED" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_CLASS" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="R_CLASSSCHED">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_CLASSSCHED_SCHED" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_CLASSSCHED" style="edgeStyle=orthogonalEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERzeroToMany;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="E_SCHEDULE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_SCHED_SCHEDSUB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_SCHEDULE" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERzeroToMany;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="R_SCHEDSUB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_SCHEDSUB_SUB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_SCHEDSUB" style="fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERmandOne;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2030" y="10" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RE_TEACH_TEACHSUB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="E_TEACHER" style="edgeStyle=orthogonalEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=none;endFill=0;startArrow=ERmandOne;startFill=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="R_TEACHSUB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="RE_TEACHSUB_SUB" edge="1" parent="sC0h2NIehoYArikVgkJi-5" source="R_TEACHSUB" style="edgeStyle=orthogonalEdgeStyle;fontSize=12;html=1;rounded=0;strokeColor=#333333;endArrow=ERzeroToMany;endFill=0;startArrow=none;startFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="E_SUBJECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
