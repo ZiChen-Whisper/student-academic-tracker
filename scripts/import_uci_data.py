@@ -1,10 +1,29 @@
 import pandas as pd
 import mysql.connector
+import numpy as np
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 from config import DB_CONFIG
+
+
+EDU_MAP = {0: '无', 1: '小学', 2: '初中', 3: '高中', 4: '大学'}
+
+
+def safe_int(val, default=0):
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def safe_str(val, default=''):
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return default
+    return str(val)
 
 
 def import_uci_data(tmp_table, subject_name, subject_id, id_prefix):
@@ -30,29 +49,32 @@ def import_uci_data(tmp_table, subject_name, subject_id, id_prefix):
             """, (
                 student_id,
                 f"Student_{id_prefix}_{idx+1}",
-                row['sex'],
-                int(row['age']),
-                row['address']
+                safe_str(row.get('sex', 'M')),
+                safe_int(row.get('age', 15)),
+                safe_str(row.get('address', ''))
             ))
 
             for stage, col in [('G1', 'G1'), ('G2', 'G2'), ('G3', 'G3')]:
+                score_val = safe_int(row.get(col, 0))
                 cursor.execute("""
                     INSERT INTO exam_score (student_id, subject_id, score, exam_stage)
                     VALUES (%s, %s, %s, %s)
-                """, (student_id, subject_id, int(row[col]), stage))
+                """, (student_id, subject_id, score_val, stage))
 
+            fedu_val = safe_int(row.get('Fedu', 0))
+            medu_val = safe_int(row.get('Medu', 0))
             cursor.execute("""
                 INSERT INTO family_background (student_id, father_edu, mother_edu,
                     father_job, mother_job, family_support, fam_rel)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
                 student_id,
-                str(row['Fedu']),
-                str(row['Medu']),
-                row['Fjob'],
-                row['Mjob'],
-                row['famsup'],
-                int(row['famrel'])
+                EDU_MAP.get(fedu_val, str(fedu_val)),
+                EDU_MAP.get(medu_val, str(medu_val)),
+                safe_str(row.get('Fjob', '')),
+                safe_str(row.get('Mjob', '')),
+                safe_str(row.get('famsup', '')),
+                safe_int(row.get('famrel', 0))
             ))
 
             cursor.execute("""
@@ -63,7 +85,6 @@ def import_uci_data(tmp_table, subject_name, subject_id, id_prefix):
             success_count += 1
         except Exception as e:
             print(f"  第{idx+1}条记录导入失败: {e}")
-            conn.rollback()
 
     conn.commit()
     cursor.close()
