@@ -7,11 +7,11 @@ CREATE TABLE tmp_uci_math (
 	age BIGINT, 
 	address TEXT, 
 	famsize TEXT, 
-	"Pstatus" TEXT, 
-	"Medu" BIGINT, 
-	"Fedu" BIGINT, 
-	"Mjob" TEXT, 
-	"Fjob" TEXT, 
+	`Pstatus` TEXT, 
+	`Medu` BIGINT, 
+	`Fedu` BIGINT, 
+	`Mjob` TEXT, 
+	`Fjob` TEXT, 
 	reason TEXT, 
 	guardian TEXT, 
 	traveltime BIGINT, 
@@ -28,13 +28,13 @@ CREATE TABLE tmp_uci_math (
 	famrel BIGINT, 
 	freetime BIGINT, 
 	goout BIGINT, 
-	"Dalc" BIGINT, 
-	"Walc" BIGINT, 
+	`Dalc` BIGINT, 
+	`Walc` BIGINT, 
 	health BIGINT, 
 	absences BIGINT, 
-	"G1" BIGINT, 
-	"G2" BIGINT, 
-	"G3" BIGINT
+	`G1` BIGINT, 
+	`G2` BIGINT, 
+	`G3` BIGINT
 )
 
 ;

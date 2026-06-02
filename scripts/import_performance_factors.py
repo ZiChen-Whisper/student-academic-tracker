@@ -1,10 +1,26 @@
 import pandas as pd
 import mysql.connector
+import numpy as np
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 from config import DB_CONFIG
+
+
+def safe_int(val, default=0):
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def safe_str(val, default=''):
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return default
+    return str(val)
 
 
 def import_performance_factors(tmp_table='tmp_perf_factors'):
@@ -25,13 +41,16 @@ def import_performance_factors(tmp_table='tmp_perf_factors'):
         try:
             student_id = f"STU_F_{idx+1:04d}"
 
+            gender_raw = safe_str(row.get('Gender', 'Male'))
+            gender = 'M' if gender_raw == 'Male' else 'F'
+
             cursor.execute("""
                 INSERT INTO student (student_id, student_name, student_gender, student_age)
                 VALUES (%s, %s, %s, %s)
             """, (
                 student_id,
                 f"Student_F_{idx+1}",
-                'M' if row.get('Gender', 'Male') == 'Male' else 'F',
+                gender,
                 None
             ))
 
@@ -42,15 +61,15 @@ def import_performance_factors(tmp_table='tmp_perf_factors'):
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 student_id,
-                int(row.get('Attendance', 0)),
-                int(row.get('Hours_Studied', 0)),
-                int(row.get('Sleep_Hours', 0)),
-                row.get('Motivation_Level', ''),
-                int(row.get('Previous_Scores', 0)),
-                int(row.get('Tutoring_Sessions', 0)),
-                row.get('Internet_Access', ''),
-                row.get('Extracurricular_Activities', ''),
-                int(row.get('Physical_Activity', 0))
+                safe_int(row.get('Attendance', 0)),
+                safe_int(row.get('Hours_Studied', 0)),
+                safe_int(row.get('Sleep_Hours', 0)),
+                safe_str(row.get('Motivation_Level', '')),
+                safe_int(row.get('Previous_Scores', 0)),
+                safe_int(row.get('Tutoring_Sessions', 0)),
+                safe_str(row.get('Internet_Access', '')),
+                safe_str(row.get('Extracurricular_Activities', '')),
+                safe_int(row.get('Physical_Activity', 0))
             ))
 
             cursor.execute("""
@@ -59,17 +78,17 @@ def import_performance_factors(tmp_table='tmp_perf_factors'):
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 student_id,
-                row.get('Parental_Education_Level', ''),
-                row.get('Parental_Education_Level', ''),
-                row.get('Family_Income', ''),
-                row.get('Parental_Involvement', ''),
-                row.get('Family_Income', '')
+                safe_str(row.get('Parental_Education_Level', '')),
+                safe_str(row.get('Parental_Education_Level', '')),
+                safe_str(row.get('Family_Income', '')),
+                safe_str(row.get('Parental_Involvement', '')),
+                safe_str(row.get('Access_to_Resources', ''))
             ))
 
             cursor.execute("""
                 INSERT INTO exam_score (student_id, subject_id, score, exam_stage)
                 VALUES (%s, %s, %s, %s)
-            """, (student_id, subject_id, int(row.get('Exam_Score', 0)), 'G3'))
+            """, (student_id, subject_id, safe_int(row.get('Exam_Score', 0)), 'G3'))
 
             cursor.execute("""
                 INSERT IGNORE INTO student_subject (student_id, subject_id, enroll_time)
@@ -79,7 +98,6 @@ def import_performance_factors(tmp_table='tmp_perf_factors'):
             success_count += 1
         except Exception as e:
             print(f"  第{idx+1}条记录导入失败: {e}")
-            conn.rollback()
 
     conn.commit()
     cursor.close()
