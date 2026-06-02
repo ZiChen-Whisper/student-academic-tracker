@@ -88,6 +88,7 @@
    ```bash
    git fetch origin  # 拉取远程仓库的所有分支信息
    git checkout -b Zichen_Zou-数据库调研任务 origin/docs  # 基于远程的 docs 分支创建并切换你的新分支（如果要基于其他分支可以自己改掉）
+   git merge origin/main  # 确保你的分支包含 main 的最新代码，避免缺少别人已提交的内容
    ```
 
    ![image-20260516142321173](Github协作详细教程.assets/image-20260516142321173.png)
