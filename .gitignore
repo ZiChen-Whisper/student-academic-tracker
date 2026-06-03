@@ -24,3 +24,5 @@ desktop.ini
 data/raw/
 
 *.log
+
+.mcp.json
