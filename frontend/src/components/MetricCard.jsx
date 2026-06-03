@@ -1,10 +1,15 @@
-import { TrendingUp, Users, AlertTriangle, CheckCircle } from 'lucide-react';
+import { TrendingUp, Users, AlertTriangle, CheckCircle, Clock, Moon, Brain, GraduationCap, Wifi } from 'lucide-react';
 
 const iconMap = {
   users: Users,
   trend: TrendingUp,
   alert: AlertTriangle,
   check: CheckCircle,
+  clock: Clock,
+  moon: Moon,
+  brain: Brain,
+  grad: GraduationCap,
+  wifi: Wifi,
 };
 
 const colorStyles = {
@@ -46,7 +51,7 @@ export default function MetricCard({ icon, label, value, color = 'default' }) {
         <div>
           <div className="metric-label">{label}</div>
           <div className="metric-value" style={{ color: style.valueColor }}>
-            {value}
+            {typeof value === 'string' || typeof value === 'number' ? value : value}
           </div>
         </div>
       </div>

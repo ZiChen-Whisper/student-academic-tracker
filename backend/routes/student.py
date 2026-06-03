@@ -44,4 +44,28 @@ def get_student(student_id):
     )
     if not student:
         return jsonify({'error': '学生不存在'}), 404
+
+    # 关联查询学习行为数据
+    behavior = query_one(
+        "SELECT * FROM learning_behavior WHERE student_id = %s",
+        (student_id,)
+    )
+    if behavior:
+        # 移除 behavior_id 和 student_id，避免冗余
+        behavior.pop('behavior_id', None)
+        behavior.pop('student_id', None)
+        behavior.pop('record_date', None)
+
+    # 关联查询家庭背景数据
+    family = query_one(
+        "SELECT * FROM family_background WHERE student_id = %s",
+        (student_id,)
+    )
+    if family:
+        family.pop('family_id', None)
+        family.pop('student_id', None)
+
+    student['behavior'] = behavior
+    student['family'] = family
+
     return jsonify(student)

@@ -7,13 +7,20 @@ alert_bp = Blueprint('alert', __name__)
 
 @alert_bp.route('/', methods=['GET'])
 def get_alerts():
-    """查询预警列表，可选参数 risk_level 筛选"""
+    """查询预警列表，可选参数 risk_level / student_id 筛选"""
     risk_level = request.args.get('risk_level', '')
-    sql = "SELECT * FROM risk_alert"
+    student_id = request.args.get('student_id', '')
+    conditions = []
     params = []
     if risk_level:
-        sql += " WHERE risk_level = %s"
+        conditions.append("risk_level = %s")
         params.append(risk_level)
+    if student_id:
+        conditions.append("student_id = %s")
+        params.append(student_id)
+    sql = "SELECT * FROM risk_alert"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
     sql += " ORDER BY alert_time DESC"
     alerts = query_all(sql, params if params else None)
     return jsonify(alerts)
