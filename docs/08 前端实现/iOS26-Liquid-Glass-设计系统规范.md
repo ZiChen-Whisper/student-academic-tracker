@@ -198,15 +198,64 @@ body::after {
 | focus 背景 | `rgba(11,101,101,0.05)` |
 | focus 光环 | `0 0 0 2.5px rgba(11,101,101,0.08)` |
 
-### 5.6 下拉框 `.liquid-select`
+### 5.6 下拉框 `.liquid-select`（自定义 LiquidSelect 组件）
 
-与输入框同风格，额外：
+> **注意**：原生 `<select>` 的下拉选项面板由 OS 渲染，无法应用液态玻璃效果。因此使用自定义 `LiquidSelect` 组件替代原生 `<select>`，确保触发器和下拉面板均遵循 Liquid Glass 设计规范。
+
+**组件文件**：`frontend/src/components/LiquidSelect.jsx`
+
+**触发器 `.liquid-select-trigger`**：
 
 | 属性 | 值 |
 |------|-----|
-| 右内边距 | `2.25rem`（为箭头留空间） |
-| 箭头图标 | 内联 SVG，14x14px，`stroke: #0b6565` |
-| option 背景 | `#ffffff` |
+| 背景 | `rgba(255,255,255,0.6)` |
+| 模糊 | `backdrop-filter: blur(20px) saturate(160%)` |
+| 边框 | `0.5px solid rgba(11,101,101,0.1)` |
+| 圆角 | `0.5rem` |
+| 内边距 | `0.5625rem 0.875rem` |
+| 字号 | `0.8125rem` |
+| 文字色 | `#1a2b2b` |
+| 顶部高光线 | `::before` — `left:10% right:10%`，`rgba(255,255,255,0.5)` |
+| hover 背景 | `rgba(255,255,255,0.72)` |
+| hover 边框 | `rgba(11,101,101,0.18)` |
+| hover 阴影 | `0 1px 3px rgba(11,101,101,0.04)` |
+| focus/open 边框 | `rgba(11,101,101,0.3)` |
+| focus/open 光环 | `0 0 0 2.5px rgba(11,101,101,0.08)` |
+| 箭头图标 | Lucide `ChevronDown`，14x14px，`color: var(--primary)`，`opacity: 0.6` |
+| 箭头旋转 | open 态 `rotate(180deg)`，过渡 `0.2s ease` |
+| 占位符色 | `rgba(11,101,101,0.35)` |
+
+**下拉面板 `.liquid-select-dropdown`**：
+
+| 属性 | 值 |
+|------|-----|
+| 定位 | `absolute`，距触发器底部 `4px` |
+| 入场动画 | `0.15s ease`，`translateY(-4px) → 0` + `opacity 0 → 1` |
+| z-index | `100` |
+
+**下拉面板内部 `.liquid-select-dropdown-inner`**：
+
+| 属性 | 值 |
+|------|-----|
+| 背景 | `rgba(255,255,255,0.82)` |
+| 模糊 | `backdrop-filter: blur(24px) saturate(180%)` |
+| 边框 | `0.5px solid rgba(11,101,101,0.1)` |
+| 圆角 | `0.625rem` |
+| 阴影 | `0 2px 6px rgba(11,101,101,0.06), 0 8px 24px rgba(11,101,101,0.05)` |
+| 内边距 | `0.25rem` |
+| 顶部高光线 | `::before` — `left:8% right:8%`，`rgba(255,255,255,0.7)` |
+
+**选项 `.liquid-select-option`**：
+
+| 状态 | 背景 | 文字色 | 字重 |
+|------|------|--------|------|
+| 默认 | transparent | `#2a3d3d` | 400 |
+| hover | `rgba(11,101,101,0.06)` | `var(--primary)` | 400 |
+| 选中 | `rgba(11,101,101,0.08)` | `var(--primary)` | 500 |
+
+选项内边距：`0.5rem 0.75rem`，圆角 `0.375rem`，字号 `0.8125rem`。
+
+选中项右侧显示勾号（CSS 绘制，`border` + `transform: rotate(45deg)`）。
 
 ### 5.7 Tab 切换 `.liquid-tabs` / `.liquid-tab`
 
