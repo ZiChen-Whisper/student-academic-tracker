@@ -24,6 +24,18 @@ def get_students():
         'per_page': per_page
     })
 
+@student_bp.route('/search', methods=['GET'])
+def search_students():
+    """按姓名模糊搜索学生"""
+    keyword = request.args.get('keyword', '')
+    if not keyword:
+        return jsonify({'data': [], 'total': 0})
+    students = query_all(
+        "SELECT * FROM student WHERE student_name LIKE %s LIMIT 20",
+        (f'%{keyword}%',)
+    )
+    return jsonify({'data': students, 'total': len(students)})
+
 @student_bp.route('/<student_id>', methods=['GET'])
 def get_student(student_id):
     student = query_one(
