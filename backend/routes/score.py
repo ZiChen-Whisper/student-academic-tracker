@@ -7,8 +7,10 @@ score_bp = Blueprint('score', __name__)
 def get_overview():
     """学情概览：学生总数、G3平均成绩、高风险预警人数"""
     total_result = query_one("SELECT COUNT(*) AS total_students FROM student")
+    # 按得分率计算平均：20分制科目除以20，100分制科目(SUBJ_GENERAL)除以100
     avg_result = query_one(
-        "SELECT ROUND(AVG(score), 2) AS average_score FROM exam_score WHERE exam_stage = 'G3'"
+        "SELECT ROUND(AVG(CASE WHEN subject_id = 'SUBJ_GENERAL' THEN score / 100.0 ELSE score / 20.0 END) * 100, 2) AS average_score_rate "
+        "FROM exam_score WHERE exam_stage = 'G3'"
     )
     risk_result = query_one(
         "SELECT COUNT(*) AS high_risk_count FROM risk_alert WHERE risk_level = 'high'"
@@ -16,15 +18,31 @@ def get_overview():
 
     return jsonify({
         'total_students': total_result['total_students'] if total_result else 0,
-        'average_score': avg_result['average_score'] if avg_result else 0,
+        'average_score_rate': avg_result['average_score_rate'] if avg_result else 0,
         'high_risk_count': risk_result['high_risk_count'] if risk_result else 0
     })
 
 @score_bp.route('/distribution', methods=['GET'])
 def get_distribution():
-    """成绩分布：按区间统计人数，支持按科目和考试阶段筛选"""
+    """成绩分布：按区间统计人数，支持按科目和考试阶段筛选，支持逐分统计"""
     subject_id = request.args.get('subject_id', '')
     exam_stage = request.args.get('exam_stage', 'G3')
+    granularity = request.args.get('granularity', '0')
+
+    # 逐分统计模式：每个分数对应一个计数
+    if granularity == '1':
+        max_score = 100 if subject_id == 'SUBJ_GENERAL' else 20
+        sql = "SELECT score, COUNT(*) AS count FROM exam_score WHERE exam_stage = %s "
+        params = [exam_stage]
+        if subject_id:
+            sql += "AND subject_id = %s "
+            params.append(subject_id)
+        sql += "GROUP BY score ORDER BY score"
+        raw = query_all(sql, params)
+        # 补零：确保每个分数都有数据
+        result_map = {item['score']: item['count'] for item in raw}
+        result = [{'score': s, 'count': result_map.get(s, 0)} for s in range(0, max_score + 1)]
+        return jsonify(result)
 
     # 根据科目判断分制：SUBJ_GENERAL 为百分制，其余为二十分制
     if subject_id == 'SUBJ_GENERAL':
@@ -98,13 +116,17 @@ def get_score_trend(student_id):
 def get_class_stats():
     class_id = request.args.get('class_id', '')
 
+    # 及格线：20分制科目(数学/葡萄牙语)为10分，100分制科目(综合)为60分
+    pass_line_sql = (
+        "CASE WHEN es.subject_id = 'SUBJ_GENERAL' THEN 60 ELSE 10 END"
+    )
     sql = (
         "SELECT c.class_id, c.class_name, es.subject_id, "
         "COUNT(es.score_id) AS student_count, "
         "ROUND(AVG(es.score), 2) AS avg_score, "
         "MIN(es.score) AS min_score, "
         "MAX(es.score) AS max_score, "
-        "ROUND(SUM(CASE WHEN es.score >= 10 THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS pass_rate "
+        f"ROUND(SUM(CASE WHEN es.score >= {pass_line_sql} THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS pass_rate "
         "FROM exam_score es "
         "JOIN student s ON es.student_id = s.student_id "
         "JOIN class c ON s.student_class_id = c.class_id "

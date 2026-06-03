@@ -1,16 +1,31 @@
 import { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
+
+// 科目满分映射
+const SUBJECT_FULL_SCORE = {
+  SUBJ_MATH: 20,
+  SUBJ_PORTUGUESE: 20,
+  SUBJ_GENERAL: 100,
+};
 import MetricCard from '../components/MetricCard';
 import LiquidCard from '../components/LiquidCard';
+import ChartTooltip from '../components/ChartTooltip';
+import ChartFilterBtn from '../components/ChartFilterBtn';
 import { getOverview, getScoreDistribution, getClassStats, getAlertStats } from '../api';
 
 const SUBJECT_MAP = {
+  SUBJ_GENERAL: '综合',
   SUBJ_MATH: '数学',
   SUBJ_PORTUGUESE: '葡萄牙语',
-  SUBJ_GENERAL: '综合',
+};
+
+const SUBJECT_COLORS = {
+  SUBJ_GENERAL: '#1a8a5a',
+  SUBJ_MATH: '#0b6565',
+  SUBJ_PORTUGUESE: '#c9933a',
 };
 
 const RISK_COLORS = {
@@ -25,36 +40,16 @@ const RISK_LABELS = {
   high: '高风险',
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      style={{
-        background: 'rgba(0,0,0,0.7)',
-        color: '#fff',
-        padding: '0.5rem 0.75rem',
-        borderRadius: '0.5rem',
-        fontSize: '0.8125rem',
-        lineHeight: 1.5,
-      }}
-    >
-      <div style={{ fontWeight: 600 }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i}>{p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</div>
-      ))}
-    </div>
-  );
-};
-
 export default function Overview() {
   const [overview, setOverview] = useState(null);
   const [distribution, setDistribution] = useState([]);
   const [classStats, setClassStats] = useState([]);
   const [alertStats, setAlertStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [distSubject, setDistSubject] = useState('SUBJ_GENERAL');
 
   useEffect(() => {
-    Promise.all([getOverview(), getScoreDistribution(), getClassStats(), getAlertStats()])
+    Promise.all([getOverview(), getScoreDistribution({ subject_id: 'SUBJ_GENERAL', granularity: 1 }), getClassStats(), getAlertStats()])
       .then(([ovRes, distRes, csRes, alRes]) => {
         setOverview(ovRes.data);
         // distribution API 返回 { value: [{ count, score_range }], Count } 或直接数组
@@ -69,13 +64,28 @@ export default function Overview() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 计算及格率：从 classStats 加权
+  // 科目切换时重新请求成绩分布
+  useEffect(() => {
+    if (loading) return;
+    getScoreDistribution({ subject_id: distSubject, granularity: 1 })
+      .then((res) => {
+        const distData = res.data?.value || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+        setDistribution(distData);
+      })
+      .catch((err) => console.error('获取成绩分布失败:', err));
+  }, [distSubject]);
+
+  // 计算及格率：基于得分率>=60%（20分制>=12分，100分制>=60分）
   const passRate = (() => {
     if (!classStats.length) return '--';
     let totalPass = 0;
     let totalStudents = 0;
     classStats.forEach((item) => {
       const count = item.student_count || 0;
+      const fullScore = SUBJECT_FULL_SCORE[item.subject_id] || 100;
+      const passLine = fullScore * 0.6;
+      const avgScore = item.avg_score || 0;
+      // 使用后端返回的 pass_rate（已按科目分制区分及格线）
       const rate = (item.pass_rate || 0) / 100;
       totalPass += count * rate;
       totalStudents += count;
@@ -84,8 +94,8 @@ export default function Overview() {
     return ((totalPass / totalStudents) * 100).toFixed(1) + '%';
   })();
 
-  // 各科目平均成绩：按科目聚合加权平均
-  const subjectAvgData = (() => {
+  // 各科目得分率：按科目聚合加权平均后换算为得分率
+  const subjectScoreRateData = (() => {
     const map = {};
     classStats.forEach((item) => {
       const subj = item.subject_id || '未知';
@@ -93,10 +103,18 @@ export default function Overview() {
       map[subj].totalScore += (item.avg_score || 0) * (item.student_count || 0);
       map[subj].totalCount += item.student_count || 0;
     });
-    return Object.entries(map).map(([key, val]) => ({
-      subject: SUBJECT_MAP[key] || key,
-      avgScore: val.totalCount ? +(val.totalScore / val.totalCount).toFixed(1) : 0,
-    }));
+    return Object.entries(map).map(([key, val]) => {
+      const fullScore = SUBJECT_FULL_SCORE[key] || 100;
+      const avgScore = val.totalCount ? +(val.totalScore / val.totalCount).toFixed(1) : 0;
+      const scoreRate = +(avgScore / fullScore * 100).toFixed(1);
+      return {
+        subject: SUBJECT_MAP[key] || key,
+        subjectId: key,
+        avgScore,
+        fullScore,
+        scoreRate,
+      };
+    });
   })();
 
   // 风险等级分布饼图数据
@@ -126,48 +144,46 @@ export default function Overview() {
       <h1 style={{ marginBottom: '1.25rem' }}>学情概览</h1>
 
       {/* 指标卡片 */}
-      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '1.25rem' }}>
+      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginBottom: '1.25rem' }}>
         <MetricCard icon="users" label="学生总数" value={overview?.total_students ?? '--'} />
-        <MetricCard icon="trend" label="平均成绩" value={overview?.average_score != null ? Number(overview.average_score).toFixed(1) : '--'} />
+        <MetricCard icon="trend" label="平均得分率" value={overview?.average_score_rate != null ? Number(overview.average_score_rate).toFixed(1) + '%' : '--'} />
         <MetricCard icon="alert" label="高风险学生" value={overview?.high_risk_count ?? '--'} color="danger" />
         <MetricCard icon="check" label="及格率" value={passRate} color="success" />
       </div>
 
       {/* 图表区：各科目平均成绩 + 风险等级分布 */}
-      <div className="card-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '1.25rem' }}>
-        {/* 各科目平均成绩柱状图 */}
-        <LiquidCard title="各科目平均成绩">
-          {subjectAvgData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={subjectAvgData} margin={{ top: 8, right: 8, bottom: 4, left: -10 }}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0b6565" />
-                    <stop offset="100%" stopColor="rgba(11,101,101,0.3)" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} vertical={false} />
-                <XAxis
-                  dataKey="subject"
-                  tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
-                  axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
-                  axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
-                  tickLine={false}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(11,101,101,0.04)' }} />
-                <Bar
-                  dataKey="avgScore"
-                  name="平均成绩"
-                  fill="url(#barGradient)"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={48}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+      <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', marginBottom: '1.25rem' }}>
+        {/* 各科目得分率 */}
+        <LiquidCard title="各科目得分率">
+          {subjectScoreRateData.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem 0' }}>
+              {subjectScoreRateData.map((item) => (
+                <div key={item.subjectId}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.375rem' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#095050' }}>{item.subject}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.5)' }}>
+                      平均 {item.avgScore} / {item.fullScore}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                    <div style={{ flex: 1, height: 20, background: 'rgba(11,101,101,0.06)', borderRadius: 10, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${item.scoreRate}%`,
+                          background: 'linear-gradient(90deg, #0b6565, rgba(11,101,101,0.5))',
+                          borderRadius: 10,
+                          transition: 'width 0.6s ease',
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0b6565', minWidth: 48, textAlign: 'right' }}>
+                      {item.scoreRate}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="text-tertiary" style={{ textAlign: 'center', padding: '3rem 0' }}>暂无数据</p>
           )}
@@ -194,7 +210,7 @@ export default function Overview() {
                         <Cell key={entry.key} fill={RISK_COLORS[entry.key]} />
                       ))}
                     </Pie>
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<ChartTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
                 {/* 中心镂空：显示预警总数 */}
@@ -246,38 +262,57 @@ export default function Overview() {
         </LiquidCard>
       </div>
 
-      {/* 成绩分布直方图 */}
+      {/* 成绩分布面积图 */}
       <LiquidCard title="成绩分布">
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          {Object.entries(SUBJECT_MAP).map(([id, name]) => (
+            <ChartFilterBtn
+              key={id}
+              active={distSubject === id}
+              color={SUBJECT_COLORS[id]}
+              onClick={() => setDistSubject(id)}
+            >
+              {name}
+            </ChartFilterBtn>
+          ))}
+        </div>
         {distribution.length > 0 ? (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={distribution} margin={{ top: 8, right: 8, bottom: 4, left: -10 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={distribution} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
               <defs>
-                <linearGradient id="distBarGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0b6565" />
-                  <stop offset="100%" stopColor="rgba(11,101,101,0.3)" />
+                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0b6565" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#0b6565" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} vertical={false} />
               <XAxis
-                dataKey="score_range"
+                dataKey="score"
+                type="number"
+                domain={[0, SUBJECT_FULL_SCORE[distSubject] || 100]}
                 tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
                 axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
                 tickLine={false}
+                label={{ value: '分数', position: 'insideBottomRight', offset: -4, fill: 'rgba(11,101,101,0.4)', fontSize: 12 }}
+                ticks={distSubject === 'SUBJ_GENERAL' ? [0, 20, 40, 60, 80, 100] : [0, 5, 10, 15, 20]}
               />
               <YAxis
                 tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
                 axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
                 tickLine={false}
+                label={{ value: '人数', angle: -90, position: 'insideTopLeft', offset: 16, fill: 'rgba(11,101,101,0.4)', fontSize: 12 }}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(11,101,101,0.04)' }} />
-              <Bar
+              <Tooltip content={<ChartTooltip />} labelFormatter={(label) => `分数: ${label}`} />
+              <Area
+                type="monotone"
                 dataKey="count"
                 name="人数"
-                fill="url(#distBarGradient)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={56}
+                stroke="#0b6565"
+                strokeWidth={2}
+                fill="url(#areaGradient)"
+                dot={false}
               />
-            </BarChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
           <p className="text-tertiary" style={{ textAlign: 'center', padding: '3rem 0' }}>暂无数据</p>
