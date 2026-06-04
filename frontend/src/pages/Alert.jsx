@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { RefreshCw, ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil } from 'lucide-react';
+import { RefreshCw, ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import LiquidCard from '../components/LiquidCard';
 import LiquidSelect from '../components/LiquidSelect';
 import ChartTooltip from '../components/ChartTooltip';
@@ -28,21 +28,24 @@ const STATUS_MAP = {
   completed: { label: '已完成', color: '#1a8a5a' },
 };
 
+const SORT_DIR = { asc: 'asc', desc: 'desc' };
+
 export default function Alert() {
   const [alerts, setAlerts] = useState([]);
   const [alertStats, setAlertStats] = useState(null);
   const [riskFilter, setRiskFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [studentIdFilter, setStudentIdFilter] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState('alert_time');
+  const [sortDir, setSortDir] = useState(SORT_DIR.desc);
   const pageSize = 15;
 
   // 干预弹窗状态
   const [modalOpen, setModalOpen] = useState(false);
-  const [interveneAlertId, setInterveneAlertId] = useState('');
-  const [interveneStudentId, setInterveneStudentId] = useState('');
+  const [interveneAlert, setInterveneAlert] = useState(null);
   const [interveneStatus, setInterveneStatus] = useState('pending');
   const [interveneMeasure, setInterveneMeasure] = useState('');
   const [interveneMsg, setInterveneMsg] = useState(null);
@@ -53,7 +56,6 @@ export default function Alert() {
     try {
       const params = {};
       if (riskFilter) params.risk_level = riskFilter;
-      if (studentIdFilter.trim()) params.student_id = studentIdFilter.trim();
       if (statusFilter) params.intervention_status = statusFilter;
       const [alertsRes, statsRes] = await Promise.all([
         getAlerts(params),
@@ -66,7 +68,7 @@ export default function Alert() {
     } finally {
       setLoading(false);
     }
-  }, [riskFilter, statusFilter, studentIdFilter]);
+  }, [riskFilter, statusFilter]);
 
   useEffect(() => {
     fetchAlerts();
@@ -87,8 +89,7 @@ export default function Alert() {
 
   // 打开干预弹窗
   const openInterveneModal = (alert) => {
-    setInterveneAlertId(String(alert.alert_id));
-    setInterveneStudentId(alert.student_id);
+    setInterveneAlert(alert);
     setInterveneStatus(alert.intervention_status || 'pending');
     setInterveneMeasure(alert.intervention_measure || '');
     setInterveneMsg(null);
@@ -98,8 +99,7 @@ export default function Alert() {
   // 关闭弹窗
   const closeModal = () => {
     setModalOpen(false);
-    setInterveneAlertId('');
-    setInterveneStudentId('');
+    setInterveneAlert(null);
     setInterveneStatus('pending');
     setInterveneMeasure('');
     setInterveneMsg(null);
@@ -107,8 +107,8 @@ export default function Alert() {
 
   // 更新干预状态
   const handleIntervene = async () => {
-    const id = parseInt(interveneAlertId, 10);
-    if (!id || isNaN(id)) {
+    const id = interveneAlert?.alert_id;
+    if (!id) {
       setInterveneMsg({ type: 'error', text: '预警 ID 无效' });
       return;
     }
@@ -142,9 +142,73 @@ export default function Alert() {
 
   const totalAlerts = riskData.reduce((sum, d) => sum + d.value, 0);
 
+  // 模糊搜索过滤（姓名 + 学生ID）
+  const filteredAlerts = alerts.filter((a) => {
+    if (!searchKeyword.trim()) return true;
+    const kw = searchKeyword.trim().toLowerCase();
+    return (
+      (a.student_id && a.student_id.toLowerCase().includes(kw)) ||
+      (a.student_name && a.student_name.toLowerCase().includes(kw))
+    );
+  });
+
+  // 排序
+  const sortedAlerts = [...filteredAlerts].sort((a, b) => {
+    let va = a[sortField];
+    let vb = b[sortField];
+    // 风险等级特殊排序
+    if (sortField === 'risk_level') {
+      va = RISK_ORDER[va] ?? 99;
+      vb = RISK_ORDER[vb] ?? 99;
+      return sortDir === SORT_DIR.asc ? va - vb : vb - va;
+    }
+    // 干预状态排序
+    if (sortField === 'intervention_status') {
+      const order = { pending: 0, in_progress: 1, completed: 2 };
+      va = order[va] ?? 99;
+      vb = order[vb] ?? 99;
+      return sortDir === SORT_DIR.asc ? va - vb : vb - va;
+    }
+    // 数值排序
+    if (sortField === 'risk_score') {
+      return sortDir === SORT_DIR.asc ? (va || 0) - (vb || 0) : (vb || 0) - (va || 0);
+    }
+    // 时间排序
+    if (sortField === 'alert_time') {
+      va = va ? new Date(va).getTime() : 0;
+      vb = vb ? new Date(vb).getTime() : 0;
+      return sortDir === SORT_DIR.asc ? va - vb : vb - va;
+    }
+    // 字符串排序
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return sortDir === SORT_DIR.asc ? -1 : 1;
+    if (va > vb) return sortDir === SORT_DIR.asc ? 1 : -1;
+    return 0;
+  });
+
+  // 切换排序
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === SORT_DIR.asc ? SORT_DIR.desc : SORT_DIR.asc));
+    } else {
+      setSortField(field);
+      setSortDir(field === 'alert_time' ? SORT_DIR.desc : SORT_DIR.asc);
+    }
+    setPage(1);
+  };
+
+  // 排序指示图标
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <ArrowUpDown size={10} style={{ opacity: 0.3, marginLeft: 2 }} />;
+    return sortDir === SORT_DIR.asc
+      ? <ArrowUp size={10} style={{ marginLeft: 2 }} />
+      : <ArrowDown size={10} style={{ marginLeft: 2 }} />;
+  };
+
   // 分页
-  const totalPages = Math.ceil(alerts.length / pageSize);
-  const pagedAlerts = alerts.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.ceil(sortedAlerts.length / pageSize);
+  const pagedAlerts = sortedAlerts.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div>
@@ -204,22 +268,18 @@ export default function Alert() {
                       top: '50%',
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
-                      width: 64,
-                      height: 64,
-                      borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.85)',
-                      backdropFilter: 'blur(4px)',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
                       pointerEvents: 'none',
+                      zIndex: 0,
                     }}
                   >
-                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#095050', lineHeight: 1.2, textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>
                       {totalAlerts}
                     </span>
-                    <span style={{ fontSize: '0.5625rem', color: 'rgba(11,101,101,0.45)' }}>预警总数</span>
+                    <span style={{ fontSize: '0.5625rem', color: 'rgba(11,101,101,0.45)', textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>预警总数</span>
                   </div>
                 </div>
                 {/* 图例 */}
@@ -251,10 +311,7 @@ export default function Alert() {
         {/* ===== 右侧 ===== */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* 筛选栏 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'rgba(11,101,101,0.65)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              筛选
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'nowrap', overflow: 'hidden' }}>
             <LiquidSelect
               value={riskFilter}
               onChange={(val) => { setRiskFilter(val); setPage(1); }}
@@ -264,7 +321,7 @@ export default function Alert() {
                 { value: 'medium', label: '中风险' },
                 { value: 'low', label: '低风险' },
               ]}
-              style={{ width: 130 }}
+              style={{ width: 130, flexShrink: 0 }}
             />
             <LiquidSelect
               value={statusFilter}
@@ -275,17 +332,17 @@ export default function Alert() {
                 { value: 'in_progress', label: '进行中' },
                 { value: 'completed', label: '已完成' },
               ]}
-              style={{ width: 130 }}
+              style={{ width: 130, flexShrink: 0 }}
             />
             <input
               className="liquid-input"
-              placeholder="搜索学生ID..."
-              value={studentIdFilter}
-              onChange={(e) => { setStudentIdFilter(e.target.value); setPage(1); }}
-              style={{ width: 160, fontSize: '0.8125rem' }}
+              placeholder="搜索姓名/学生ID..."
+              value={searchKeyword}
+              onChange={(e) => { setSearchKeyword(e.target.value); setPage(1); }}
+              style={{ width: 160, fontSize: '0.8125rem', flexShrink: 0 }}
             />
-            <span className="text-tertiary" style={{ fontSize: '0.75rem', marginLeft: 'auto' }}>
-              共 {alerts.length} 条预警
+            <span className="text-tertiary" style={{ fontSize: '0.75rem', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+              共 {sortedAlerts.length} 条预警
             </span>
           </div>
 
@@ -301,12 +358,22 @@ export default function Alert() {
                   <table className="liquid-table">
                     <thead>
                       <tr>
-                        <th style={{ width: 60 }}>ID</th>
-                        <th>学生ID</th>
-                        <th>风险等级</th>
-                        <th>风险评分</th>
-                        <th>干预状态</th>
-                        <th>预警时间</th>
+                        <th className="sortable-th" onClick={() => handleSort('student_id')}>
+                          学生ID <SortIcon field="student_id" />
+                        </th>
+                        <th>姓名</th>
+                        <th className="sortable-th" onClick={() => handleSort('risk_level')}>
+                          风险等级 <SortIcon field="risk_level" />
+                        </th>
+                        <th className="sortable-th" onClick={() => handleSort('risk_score')}>
+                          风险评分 <SortIcon field="risk_score" />
+                        </th>
+                        <th className="sortable-th" onClick={() => handleSort('intervention_status')}>
+                          干预状态 <SortIcon field="intervention_status" />
+                        </th>
+                        <th className="sortable-th" onClick={() => handleSort('alert_time')}>
+                          预警时间 <SortIcon field="alert_time" />
+                        </th>
                         <th style={{ width: 60 }}>操作</th>
                       </tr>
                     </thead>
@@ -318,8 +385,8 @@ export default function Alert() {
 
                         return (
                           <tr key={alert.alert_id}>
-                            <td style={{ fontWeight: 500, color: 'rgba(11,101,101,0.65)' }}>{alert.alert_id}</td>
                             <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{alert.student_id}</td>
+                            <td style={{ fontWeight: 500 }}>{alert.student_name || '--'}</td>
                             <td>
                               <span className={`risk-badge ${riskCls}`}>{riskLabel}</span>
                             </td>
@@ -351,7 +418,7 @@ export default function Alert() {
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem' }}
                               >
                                 <Pencil size={12} />
-                                干预
+                                <span className="btn-label">干预</span>
                               </button>
                             </td>
                           </tr>
@@ -394,7 +461,7 @@ export default function Alert() {
               <div style={{ textAlign: 'center', padding: '3rem 0' }}>
                 <ShieldAlert size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
                 <p className="text-tertiary">
-                  {riskFilter || statusFilter || studentIdFilter ? '当前筛选条件下暂无预警记录' : '暂无预警数据，请点击"重新生成预警"'}
+                  {riskFilter || statusFilter || searchKeyword ? '当前筛选条件下暂无预警记录' : '暂无预警数据，请点击"重新生成预警"'}
                 </p>
               </div>
             )}
@@ -403,7 +470,7 @@ export default function Alert() {
       </div>
 
       {/* ===== 干预操作弹窗 ===== */}
-      {modalOpen && (
+      {modalOpen && interveneAlert && (
         <div
           style={{
             position: 'fixed',
@@ -426,6 +493,7 @@ export default function Alert() {
           />
           {/* 弹窗内容 */}
           <div
+            className="liquid-scroll"
             style={{
               position: 'relative',
               background: 'rgba(255,255,255,0.85)',
@@ -435,6 +503,8 @@ export default function Alert() {
               padding: '1.75rem',
               width: 480,
               maxWidth: '90vw',
+              maxHeight: '85vh',
+              overflowY: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(11,101,101,0.05)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -465,10 +535,11 @@ export default function Alert() {
 
             <h2 style={{ marginBottom: '1.25rem', fontSize: '1.0625rem' }}>干预操作</h2>
 
-            {/* 预警信息展示 */}
+            {/* 预警完整信息展示 */}
             <div style={{
               display: 'flex',
-              gap: '1rem',
+              flexWrap: 'wrap',
+              gap: '0.75rem 1.25rem',
               marginBottom: '1.25rem',
               padding: '0.75rem 1rem',
               background: 'rgba(11,101,101,0.03)',
@@ -476,8 +547,12 @@ export default function Alert() {
               fontSize: '0.8125rem',
               color: 'rgba(11,101,101,0.65)',
             }}>
-              <span>预警 ID: <strong style={{ color: '#095050' }}>{interveneAlertId}</strong></span>
-              <span>学生ID: <strong style={{ color: '#095050', fontFamily: 'var(--font-mono)' }}>{interveneStudentId}</strong></span>
+              <span>预警 ID: <strong style={{ color: '#095050' }}>{interveneAlert.alert_id}</strong></span>
+              <span>学生ID: <strong style={{ color: '#095050', fontFamily: 'var(--font-mono)' }}>{interveneAlert.student_id}</strong></span>
+              <span>姓名: <strong style={{ color: '#095050' }}>{interveneAlert.student_name || '--'}</strong></span>
+              <span>风险等级: <span className={`risk-badge ${interveneAlert.risk_level === 'high' ? 'risk-high' : interveneAlert.risk_level === 'medium' ? 'risk-medium' : 'risk-low'}`}>{RISK_LABELS[interveneAlert.risk_level] || interveneAlert.risk_level}</span></span>
+              <span>风险评分: <strong style={{ color: interveneAlert.risk_score >= 5 ? 'var(--danger)' : interveneAlert.risk_score >= 3 ? 'var(--warning)' : 'var(--primary-dark)' }}>{interveneAlert.risk_score ?? '--'}</strong></span>
+              <span>预警时间: <strong style={{ color: '#095050' }}>{interveneAlert.alert_time ? new Date(interveneAlert.alert_time).toLocaleString('zh-CN') : '--'}</strong></span>
             </div>
 
             {/* 表单 */}

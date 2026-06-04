@@ -220,22 +220,18 @@ export default function Overview() {
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: 70,
-                    height: 70,
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.85)',
-                    backdropFilter: 'blur(4px)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     pointerEvents: 'none',
+                    zIndex: 0,
                   }}
                 >
-                  <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>
+                  <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#095050', lineHeight: 1.2, textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>
                     {totalAlerts}
                   </span>
-                  <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.45)' }}>预警总数</span>
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.45)', textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>预警总数</span>
                 </div>
               </div>
               {/* 底部图例 */}

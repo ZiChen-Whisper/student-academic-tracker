@@ -26,13 +26,13 @@ def get_students():
 
 @student_bp.route('/search', methods=['GET'])
 def search_students():
-    """按姓名模糊搜索学生"""
+    """按姓名或学生ID模糊搜索学生"""
     keyword = request.args.get('keyword', '')
     if not keyword:
         return jsonify({'data': [], 'total': 0})
     students = query_all(
-        "SELECT * FROM student WHERE student_name LIKE %s LIMIT 20",
-        (f'%{keyword}%',)
+        "SELECT * FROM student WHERE student_name LIKE %s OR student_id LIKE %s LIMIT 20",
+        (f'%{keyword}%', f'%{keyword}%')
     )
     return jsonify({'data': students, 'total': len(students)})
 
