@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { RefreshCw, ShieldAlert, Clock, CheckCircle2, Loader } from 'lucide-react';
+import { RefreshCw, ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil } from 'lucide-react';
 import LiquidCard from '../components/LiquidCard';
 import LiquidSelect from '../components/LiquidSelect';
 import ChartTooltip from '../components/ChartTooltip';
@@ -32,13 +32,17 @@ export default function Alert() {
   const [alerts, setAlerts] = useState([]);
   const [alertStats, setAlertStats] = useState(null);
   const [riskFilter, setRiskFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [studentIdFilter, setStudentIdFilter] = useState('');
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
-  // 干预操作表单
+  // 干预弹窗状态
+  const [modalOpen, setModalOpen] = useState(false);
   const [interveneAlertId, setInterveneAlertId] = useState('');
+  const [interveneStudentId, setInterveneStudentId] = useState('');
   const [interveneStatus, setInterveneStatus] = useState('pending');
   const [interveneMeasure, setInterveneMeasure] = useState('');
   const [interveneMsg, setInterveneMsg] = useState(null);
@@ -49,6 +53,8 @@ export default function Alert() {
     try {
       const params = {};
       if (riskFilter) params.risk_level = riskFilter;
+      if (studentIdFilter.trim()) params.student_id = studentIdFilter.trim();
+      if (statusFilter) params.intervention_status = statusFilter;
       const [alertsRes, statsRes] = await Promise.all([
         getAlerts(params),
         getAlertStats(),
@@ -60,7 +66,7 @@ export default function Alert() {
     } finally {
       setLoading(false);
     }
-  }, [riskFilter]);
+  }, [riskFilter, statusFilter, studentIdFilter]);
 
   useEffect(() => {
     fetchAlerts();
@@ -79,11 +85,31 @@ export default function Alert() {
     }
   };
 
+  // 打开干预弹窗
+  const openInterveneModal = (alert) => {
+    setInterveneAlertId(String(alert.alert_id));
+    setInterveneStudentId(alert.student_id);
+    setInterveneStatus(alert.intervention_status || 'pending');
+    setInterveneMeasure(alert.intervention_measure || '');
+    setInterveneMsg(null);
+    setModalOpen(true);
+  };
+
+  // 关闭弹窗
+  const closeModal = () => {
+    setModalOpen(false);
+    setInterveneAlertId('');
+    setInterveneStudentId('');
+    setInterveneStatus('pending');
+    setInterveneMeasure('');
+    setInterveneMsg(null);
+  };
+
   // 更新干预状态
   const handleIntervene = async () => {
     const id = parseInt(interveneAlertId, 10);
     if (!id || isNaN(id)) {
-      setInterveneMsg({ type: 'error', text: '请输入有效的预警 ID' });
+      setInterveneMsg({ type: 'error', text: '预警 ID 无效' });
       return;
     }
     if (!interveneMeasure.trim()) {
@@ -96,11 +122,8 @@ export default function Alert() {
         intervention_measure: interveneMeasure.trim(),
       });
       setInterveneMsg({ type: 'success', text: '干预状态更新成功' });
-      setInterveneAlertId('');
-      setInterveneMeasure('');
-      setInterveneStatus('pending');
       await fetchAlerts();
-      setTimeout(() => setInterveneMsg(null), 3000);
+      setTimeout(() => closeModal(), 1200);
     } catch (err) {
       const errorMsg = err.response?.data?.error || '更新失败';
       setInterveneMsg({ type: 'error', text: errorMsg });
@@ -228,9 +251,9 @@ export default function Alert() {
         {/* ===== 右侧 ===== */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* 筛选栏 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.8125rem', color: 'rgba(11,101,101,0.65)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              筛选风险等级
+              筛选
             </span>
             <LiquidSelect
               value={riskFilter}
@@ -241,7 +264,25 @@ export default function Alert() {
                 { value: 'medium', label: '中风险' },
                 { value: 'low', label: '低风险' },
               ]}
-              style={{ width: 160 }}
+              style={{ width: 130 }}
+            />
+            <LiquidSelect
+              value={statusFilter}
+              onChange={(val) => { setStatusFilter(val); setPage(1); }}
+              options={[
+                { value: '', label: '全部状态' },
+                { value: 'pending', label: '待处理' },
+                { value: 'in_progress', label: '进行中' },
+                { value: 'completed', label: '已完成' },
+              ]}
+              style={{ width: 130 }}
+            />
+            <input
+              className="liquid-input"
+              placeholder="搜索学生ID..."
+              value={studentIdFilter}
+              onChange={(e) => { setStudentIdFilter(e.target.value); setPage(1); }}
+              style={{ width: 160, fontSize: '0.8125rem' }}
             />
             <span className="text-tertiary" style={{ fontSize: '0.75rem', marginLeft: 'auto' }}>
               共 {alerts.length} 条预警
@@ -266,6 +307,7 @@ export default function Alert() {
                         <th>风险评分</th>
                         <th>干预状态</th>
                         <th>预警时间</th>
+                        <th style={{ width: 60 }}>操作</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -300,6 +342,17 @@ export default function Alert() {
                               {alert.alert_time
                                 ? new Date(alert.alert_time).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                                 : '--'}
+                            </td>
+                            <td>
+                              <button
+                                className="liquid-btn liquid-btn-sm"
+                                onClick={() => openInterveneModal(alert)}
+                                title="干预操作"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem' }}
+                              >
+                                <Pencil size={12} />
+                                干预
+                              </button>
                             </td>
                           </tr>
                         );
@@ -341,29 +394,96 @@ export default function Alert() {
               <div style={{ textAlign: 'center', padding: '3rem 0' }}>
                 <ShieldAlert size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
                 <p className="text-tertiary">
-                  {riskFilter ? `暂无${RISK_LABELS[riskFilter]}预警记录` : '暂无预警数据，请点击"重新生成预警"'}
+                  {riskFilter || statusFilter || studentIdFilter ? '当前筛选条件下暂无预警记录' : '暂无预警数据，请点击"重新生成预警"'}
                 </p>
               </div>
             )}
           </LiquidCard>
+        </div>
+      </div>
 
-          {/* 干预操作区域 */}
-          <LiquidCard title="干预操作">
-            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr auto', gap: '0.75rem', alignItems: 'end' }}>
+      {/* ===== 干预操作弹窗 ===== */}
+      {modalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={closeModal}
+        >
+          {/* 遮罩层 */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(4px)',
+            }}
+          />
+          {/* 弹窗内容 */}
+          <div
+            style={{
+              position: 'relative',
+              background: 'rgba(255,255,255,0.85)',
+              backdropFilter: 'blur(24px)',
+              border: '0.5px solid rgba(11,101,101,0.08)',
+              borderRadius: 16,
+              padding: '1.75rem',
+              width: 480,
+              maxWidth: '90vw',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(11,101,101,0.05)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 关闭按钮 */}
+            <button
+              onClick={closeModal}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'rgba(11,101,101,0.35)',
+                padding: 4,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 6,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(11,101,101,0.65)'; e.currentTarget.style.background = 'rgba(11,101,101,0.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(11,101,101,0.35)'; e.currentTarget.style.background = 'none'; }}
+            >
+              <X size={18} />
+            </button>
+
+            <h2 style={{ marginBottom: '1.25rem', fontSize: '1.0625rem' }}>干预操作</h2>
+
+            {/* 预警信息展示 */}
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '1.25rem',
+              padding: '0.75rem 1rem',
+              background: 'rgba(11,101,101,0.03)',
+              borderRadius: 10,
+              fontSize: '0.8125rem',
+              color: 'rgba(11,101,101,0.65)',
+            }}>
+              <span>预警 ID: <strong style={{ color: '#095050' }}>{interveneAlertId}</strong></span>
+              <span>学生ID: <strong style={{ color: '#095050', fontFamily: 'var(--font-mono)' }}>{interveneStudentId}</strong></span>
+            </div>
+
+            {/* 表单 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'rgba(11,101,101,0.45)', marginBottom: '0.25rem' }}>
-                  预警 ID
-                </label>
-                <input
-                  className="liquid-input"
-                  placeholder="输入 ID"
-                  value={interveneAlertId}
-                  onChange={(e) => setInterveneAlertId(e.target.value)}
-                  type="number"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'rgba(11,101,101,0.45)', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(11,101,101,0.45)', marginBottom: '0.375rem' }}>
                   干预状态
                 </label>
                 <LiquidSelect
@@ -374,24 +494,24 @@ export default function Alert() {
                     { value: 'in_progress', label: '进行中' },
                     { value: 'completed', label: '已完成' },
                   ]}
+                  style={{ width: '100%' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'rgba(11,101,101,0.45)', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(11,101,101,0.45)', marginBottom: '0.375rem' }}>
                   干预措施
                 </label>
-                <input
+                <textarea
                   className="liquid-input"
-                  placeholder="输入干预措施..."
+                  placeholder="请输入干预措施..."
                   value={interveneMeasure}
                   onChange={(e) => setInterveneMeasure(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleIntervene()}
+                  rows={3}
+                  style={{ width: '100%', resize: 'vertical', minHeight: 72 }}
                 />
               </div>
-              <button className="liquid-btn" onClick={handleIntervene}>
-                更新
-              </button>
             </div>
+
             {/* 反馈消息 */}
             {interveneMsg && (
               <div
@@ -402,9 +522,19 @@ export default function Alert() {
                 {interveneMsg.text}
               </div>
             )}
-          </LiquidCard>
+
+            {/* 操作按钮 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.25rem' }}>
+              <button className="liquid-btn" onClick={closeModal}>
+                取消
+              </button>
+              <button className="liquid-btn liquid-btn-primary" onClick={handleIntervene}>
+                确认更新
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* spin 动画 */}
       <style>{`
