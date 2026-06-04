@@ -10,6 +10,11 @@ export const getStudents = () => api.get('/students/');
 export const getStudent = (id) => api.get(`/students/${id}`);
 export const searchStudents = (params) => api.get('/students/search', { params });
 
+// 教师相关
+export const getTeachers = () => api.get('/teachers/');
+export const searchTeachers = (params) => api.get('/teachers/search', { params });
+export const getTeacherClasses = (id) => api.get(`/teachers/${id}/classes`);
+
 // 成绩相关
 export const getScoreTrend = (id) => api.get(`/scores/trend/${id}`);
 export const getOverview = () => api.get('/scores/overview');

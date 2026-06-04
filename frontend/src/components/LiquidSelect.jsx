@@ -111,11 +111,11 @@ export default function LiquidSelect({ value, onChange, options, placeholder, st
         />
       </button>
 
-      {/* 下拉面板 — Portal 渲染到 body */}
-      {open && createPortal(
+      {/* 下拉面板 — Portal 渲染到 body，始终挂载以避免 backdrop-filter 闪烁 */}
+      {createPortal(
         <div
           ref={dropdownRef}
-          className={`liquid-select-dropdown ${dropUp ? 'liquid-select-dropdown-up' : ''}`}
+          className={`liquid-select-dropdown ${dropUp ? 'liquid-select-dropdown-up' : ''} ${open ? 'liquid-select-dropdown-open' : 'liquid-select-dropdown-closed'}`}
           style={dropdownStyle}
         >
           <div className="liquid-select-dropdown-inner">
