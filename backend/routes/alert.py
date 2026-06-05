@@ -7,25 +7,29 @@ alert_bp = Blueprint('alert', __name__)
 
 @alert_bp.route('/', methods=['GET'])
 def get_alerts():
-    """查询预警列表，可选参数 risk_level / student_id / intervention_status 筛选"""
+    """查询预警列表，可选参数 risk_level / student_id / intervention_status / class_id 筛选"""
     risk_level = request.args.get('risk_level', '')
     student_id = request.args.get('student_id', '')
     intervention_status = request.args.get('intervention_status', '')
+    class_id = request.args.get('class_id', '')
     conditions = []
     params = []
     if risk_level:
-        conditions.append("risk_level = %s")
+        conditions.append("ra.risk_level = %s")
         params.append(risk_level)
     if student_id:
-        conditions.append("student_id LIKE %s")
+        conditions.append("ra.student_id LIKE %s")
         params.append(f"%{student_id}%")
     if intervention_status:
-        conditions.append("intervention_status = %s")
+        conditions.append("ra.intervention_status = %s")
         params.append(intervention_status)
-    sql = "SELECT * FROM risk_alert"
+    if class_id:
+        conditions.append("s.student_class_id = %s")
+        params.append(class_id)
+    sql = "SELECT ra.*, s.student_name FROM risk_alert ra LEFT JOIN student s ON ra.student_id = s.student_id"
     if conditions:
         sql += " WHERE " + " AND ".join(conditions)
-    sql += " ORDER BY alert_time DESC"
+    sql += " ORDER BY ra.alert_time DESC"
     alerts = query_all(sql, params if params else None)
     return jsonify(alerts)
 
@@ -75,10 +79,17 @@ def intervene_alert(alert_id):
 
 @alert_bp.route('/stats', methods=['GET'])
 def get_alert_stats():
-    """预警统计（按风险等级分组计数）"""
-    stats = query_all(
-        "SELECT risk_level, COUNT(*) AS count FROM risk_alert GROUP BY risk_level"
-    )
+    """预警统计（按风险等级分组计数），可选 class_id 筛选"""
+    class_id = request.args.get('class_id', '')
+    if class_id:
+        stats = query_all(
+            "SELECT ra.risk_level, COUNT(*) AS count FROM risk_alert ra JOIN student s ON ra.student_id = s.student_id WHERE s.student_class_id = %s GROUP BY ra.risk_level",
+            (class_id,)
+        )
+    else:
+        stats = query_all(
+            "SELECT risk_level, COUNT(*) AS count FROM risk_alert GROUP BY risk_level"
+        )
     result = {'high': 0, 'medium': 0, 'low': 0}
     for row in stats:
         result[row['risk_level']] = row['count']

@@ -10,6 +10,7 @@ import { ChevronDown } from 'lucide-react';
  */
 export default function LiquidSelect({ value, onChange, options, placeholder, style, className = '' }) {
   const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(false); // 面板是否可见（延迟显示，避免 backdrop-filter 闪烁）
   const [dropUp, setDropUp] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const ref = useRef(null);
@@ -31,9 +32,14 @@ export default function LiquidSelect({ value, onChange, options, placeholder, st
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  // 打开时计算位置和方向
+  // 打开时计算位置和方向，延迟显示让 backdrop-filter 先计算
   useLayoutEffect(() => {
-    if (!open || !triggerRef.current) return;
+    if (!open) {
+      setVisible(false);
+      return;
+    }
+
+    if (!triggerRef.current) return;
 
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -51,6 +57,11 @@ export default function LiquidSelect({ value, onChange, options, placeholder, st
         ? { bottom: window.innerHeight - rect.top + 6 }
         : { top: rect.bottom + 6 }),
     });
+
+    // 延迟显示：先渲染面板（opacity:0），等 backdrop-filter 计算完成后再显示
+    setVisible(false);
+    const timer = setTimeout(() => setVisible(true), 30);
+    return () => clearTimeout(timer);
   }, [open, options.length]);
 
   // 窗口变化时更新位置
@@ -90,12 +101,23 @@ export default function LiquidSelect({ value, onChange, options, placeholder, st
       className={`liquid-select-wrapper ${className}`}
       style={style}
     >
-      {/* 触发器 */}
-      <button
+      {/* 触发器 — 使用 div 而非 button，因为 button 元素的 backdrop-filter 在多数浏览器中不渲染 */}
+      <div
         ref={triggerRef}
-        type="button"
+        role="combobox"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-haspopup="listbox"
         className={`liquid-select-trigger ${open ? 'liquid-select-trigger-open' : ''}`}
         onClick={() => setOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen((prev) => !prev);
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
       >
         <span className={`liquid-select-text ${!selectedOption ? 'liquid-select-placeholder' : ''}`}>
           {displayText}
@@ -109,13 +131,13 @@ export default function LiquidSelect({ value, onChange, options, placeholder, st
             flexShrink: 0,
           }}
         />
-      </button>
+      </div>
 
-      {/* 下拉面板 — Portal 渲染到 body，始终挂载以避免 backdrop-filter 闪烁 */}
-      {createPortal(
+      {/* 下拉面板 — Portal 渲染到 body */}
+      {open && createPortal(
         <div
           ref={dropdownRef}
-          className={`liquid-select-dropdown ${dropUp ? 'liquid-select-dropdown-up' : ''} ${open ? 'liquid-select-dropdown-open' : 'liquid-select-dropdown-closed'}`}
+          className={`liquid-select-dropdown ${dropUp ? 'liquid-select-dropdown-up' : ''} ${visible ? 'liquid-select-dropdown-open' : 'liquid-select-dropdown-closed'}`}
           style={dropdownStyle}
         >
           <div className="liquid-select-dropdown-inner">

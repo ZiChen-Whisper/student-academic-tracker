@@ -6,6 +6,7 @@ import { RefreshCw, ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil, ArrowUp
 import LiquidCard from '../components/LiquidCard';
 import LiquidSelect from '../components/LiquidSelect';
 import ChartTooltip from '../components/ChartTooltip';
+import { useRole } from '../contexts/RoleContext';
 import { getAlerts, generateAlerts, updateIntervention, getAlertStats } from '../api';
 
 const RISK_COLORS = {
@@ -31,6 +32,8 @@ const STATUS_MAP = {
 const SORT_DIR = { asc: 'asc', desc: 'desc' };
 
 export default function Alert() {
+  const { role, selectedTeacherClassId } = useRole();
+  const classId = role === 'teacher' && selectedTeacherClassId ? selectedTeacherClassId : '';
   const [alerts, setAlerts] = useState([]);
   const [alertStats, setAlertStats] = useState(null);
   const [riskFilter, setRiskFilter] = useState('');
@@ -57,9 +60,11 @@ export default function Alert() {
       const params = {};
       if (riskFilter) params.risk_level = riskFilter;
       if (statusFilter) params.intervention_status = statusFilter;
+      if (classId) params.class_id = classId;
+      const statsParams = classId ? { class_id: classId } : {};
       const [alertsRes, statsRes] = await Promise.all([
         getAlerts(params),
-        getAlertStats(),
+        getAlertStats(statsParams),
       ]);
       setAlerts(Array.isArray(alertsRes.data) ? alertsRes.data : []);
       setAlertStats(statsRes.data);
@@ -68,7 +73,7 @@ export default function Alert() {
     } finally {
       setLoading(false);
     }
-  }, [riskFilter, statusFilter]);
+  }, [riskFilter, statusFilter, classId]);
 
   useEffect(() => {
     fetchAlerts();
@@ -273,7 +278,7 @@ export default function Alert() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       pointerEvents: 'none',
-                      zIndex: 0,
+                      zIndex: -1,
                     }}
                   >
                     <span style={{ fontSize: '1rem', fontWeight: 700, color: '#095050', lineHeight: 1.2, textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>
@@ -311,7 +316,7 @@ export default function Alert() {
         {/* ===== 右侧 ===== */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* 筛选栏 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'nowrap', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'nowrap' }}>
             <LiquidSelect
               value={riskFilter}
               onChange={(val) => { setRiskFilter(val); setPage(1); }}

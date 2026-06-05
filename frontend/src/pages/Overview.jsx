@@ -3,6 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
+import { Shield, GraduationCap } from 'lucide-react';
 
 // 科目满分映射
 const SUBJECT_FULL_SCORE = {
@@ -14,6 +15,7 @@ import MetricCard from '../components/MetricCard';
 import LiquidCard from '../components/LiquidCard';
 import ChartTooltip from '../components/ChartTooltip';
 import ChartFilterBtn from '../components/ChartFilterBtn';
+import { useRole } from '../contexts/RoleContext';
 import { getOverview, getScoreDistribution, getClassStats, getAlertStats } from '../api';
 
 const SUBJECT_MAP = {
@@ -41,6 +43,8 @@ const RISK_LABELS = {
 };
 
 export default function Overview() {
+  const { role, selectedTeacherClassId, selectedTeacherName } = useRole();
+  const classId = role === 'teacher' && selectedTeacherClassId ? selectedTeacherClassId : '';
   const [overview, setOverview] = useState(null);
   const [distribution, setDistribution] = useState([]);
   const [classStats, setClassStats] = useState([]);
@@ -49,7 +53,8 @@ export default function Overview() {
   const [distSubject, setDistSubject] = useState('SUBJ_GENERAL');
 
   useEffect(() => {
-    Promise.all([getOverview(), getScoreDistribution({ subject_id: 'SUBJ_GENERAL', granularity: 1 }), getClassStats(), getAlertStats()])
+    const params = classId ? { class_id: classId } : {};
+    Promise.all([getOverview(params), getScoreDistribution({ subject_id: 'SUBJ_GENERAL', granularity: 1, ...params }), getClassStats(params), getAlertStats(params)])
       .then(([ovRes, distRes, csRes, alRes]) => {
         setOverview(ovRes.data);
         // distribution API 返回 { value: [{ count, score_range }], Count } 或直接数组
@@ -62,18 +67,19 @@ export default function Overview() {
         console.error('获取学情概览数据失败:', err);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [classId]);
 
   // 科目切换时重新请求成绩分布
   useEffect(() => {
     if (loading) return;
-    getScoreDistribution({ subject_id: distSubject, granularity: 1 })
+    const params = classId ? { class_id: classId } : {};
+    getScoreDistribution({ subject_id: distSubject, granularity: 1, ...params })
       .then((res) => {
         const distData = res.data?.value || res.data?.data || (Array.isArray(res.data) ? res.data : []);
         setDistribution(distData);
       })
       .catch((err) => console.error('获取成绩分布失败:', err));
-  }, [distSubject]);
+  }, [distSubject, classId, loading]);
 
   // 计算及格率：基于得分率>=60%（20分制>=12分，100分制>=60分）
   const passRate = (() => {
@@ -141,7 +147,39 @@ export default function Overview() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '1.25rem' }}>学情概览</h1>
+      {/* 欢迎横幅 */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(11,101,101,0.06) 0%, rgba(11,101,101,0.02) 100%)',
+        border: '0.5px solid rgba(11,101,101,0.08)',
+        borderLeft: '4px solid var(--primary)',
+        borderRadius: '0.75rem',
+        padding: '1.25rem 1.5rem',
+        marginBottom: '1.25rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          background: 'rgba(11,101,101,0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {role === 'admin' ? <Shield size={22} style={{ color: 'var(--primary)' }} /> : <GraduationCap size={22} style={{ color: 'var(--primary)' }} />}
+        </div>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#095050', lineHeight: 1.3 }}>
+            {role === 'admin' ? '欢迎回来，系统管理员' : `欢迎回来，${selectedTeacherName || ''}老师`}
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: 'rgba(11,101,101,0.5)', marginTop: '0.25rem' }}>
+            {role === 'admin' ? '全校学情数据一览' : '班级学情数据一览'}
+          </p>
+        </div>
+      </div>
 
       {/* 指标卡片 */}
       <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginBottom: '1.25rem' }}>
@@ -225,7 +263,7 @@ export default function Overview() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     pointerEvents: 'none',
-                    zIndex: 0,
+                    zIndex: -1,
                   }}
                 >
                   <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#095050', lineHeight: 1.2, textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>

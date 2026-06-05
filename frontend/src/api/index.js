@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 // 学生相关
-export const getStudents = () => api.get('/students/');
+export const getStudents = (params) => api.get('/students/', { params });
 export const getStudent = (id) => api.get(`/students/${id}`);
 export const searchStudents = (params) => api.get('/students/search', { params });
 
@@ -17,7 +17,7 @@ export const getTeacherClasses = (id) => api.get(`/teachers/${id}/classes`);
 
 // 成绩相关
 export const getScoreTrend = (id) => api.get(`/scores/trend/${id}`);
-export const getOverview = () => api.get('/scores/overview');
+export const getOverview = (params) => api.get('/scores/overview', { params });
 export const getScoreDistribution = (params) => api.get('/scores/distribution', { params });
 export const getClassStats = (params) => api.get('/scores/class-stats', { params });
 
@@ -28,7 +28,7 @@ export const nl2sqlQuery = (question) => api.post('/nl2sql/query', { question })
 export const getAlerts = (params) => api.get('/alerts/', { params });
 export const generateAlerts = () => api.post('/alerts/generate');
 export const updateIntervention = (id, data) => api.put(`/alerts/${id}/intervene`, data);
-export const getAlertStats = () => api.get('/alerts/stats');
+export const getAlertStats = (params) => api.get('/alerts/stats', { params });
 
 // 建议相关
 export const getSuggestions = (id) => api.get(`/suggestions/${id}`);

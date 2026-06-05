@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { User, AlertTriangle, Clock } from 'lucide-react';
+import { User, Users, AlertTriangle, Clock } from 'lucide-react';
 import LiquidCard from '../components/LiquidCard';
 import MetricCard from '../components/MetricCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -134,7 +134,39 @@ export default function ParentView() {
   if (!selectedStudentId) {
     return (
       <div>
-        <h1 style={{ marginBottom: '1.25rem' }}>孩子成绩报告</h1>
+        {/* 欢迎横幅 */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(11,101,101,0.06) 0%, rgba(11,101,101,0.02) 100%)',
+          border: '0.5px solid rgba(11,101,101,0.08)',
+          borderLeft: '4px solid var(--primary)',
+          borderRadius: '0.75rem',
+          padding: '1.25rem 1.5rem',
+          marginBottom: '1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+        }}>
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: 'rgba(11,101,101,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Users size={22} style={{ color: 'var(--primary)' }} />
+          </div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#095050', lineHeight: 1.3 }}>
+              欢迎回来
+            </h1>
+            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'rgba(11,101,101,0.5)', marginTop: '0.25rem' }}>
+              关注孩子的学业表现与预警信息
+            </p>
+          </div>
+        </div>
         <LiquidCard>
           <div style={{
             display: 'flex',
@@ -155,7 +187,39 @@ export default function ParentView() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '1.25rem' }}>孩子成绩报告</h1>
+      {/* 欢迎横幅 */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(11,101,101,0.06) 0%, rgba(11,101,101,0.02) 100%)',
+        border: '0.5px solid rgba(11,101,101,0.08)',
+        borderLeft: '4px solid var(--primary)',
+        borderRadius: '0.75rem',
+        padding: '1.25rem 1.5rem',
+        marginBottom: '1.25rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          background: 'rgba(11,101,101,0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Users size={22} style={{ color: 'var(--primary)' }} />
+        </div>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#095050', lineHeight: 1.3 }}>
+            欢迎回来，{selectedStudentName}的家长
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: 'rgba(11,101,101,0.5)', marginTop: '0.25rem' }}>
+            关注孩子的学业表现与预警信息
+          </p>
+        </div>
+      </div>
 
       {/* 学生信息 */}
       <LiquidCard style={{ marginBottom: '1.25rem' }}>

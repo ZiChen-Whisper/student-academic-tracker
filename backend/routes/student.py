@@ -8,14 +8,22 @@ def get_students():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     offset = (page - 1) * per_page
+    class_id = request.args.get('class_id', '')
 
-    total_result = query_one("SELECT COUNT(*) AS total FROM student")
+    if class_id:
+        total_result = query_one("SELECT COUNT(*) AS total FROM student WHERE student_class_id = %s", (class_id,))
+        students = query_all(
+            "SELECT * FROM student WHERE student_class_id = %s LIMIT %s OFFSET %s",
+            (class_id, per_page, offset)
+        )
+    else:
+        total_result = query_one("SELECT COUNT(*) AS total FROM student")
+        students = query_all(
+            "SELECT * FROM student LIMIT %s OFFSET %s",
+            (per_page, offset)
+        )
+
     total = total_result['total'] if total_result else 0
-
-    students = query_all(
-        "SELECT * FROM student LIMIT %s OFFSET %s",
-        (per_page, offset)
-    )
 
     return jsonify({
         'data': students,
