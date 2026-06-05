@@ -5,16 +5,29 @@ score_bp = Blueprint('score', __name__)
 
 @score_bp.route('/overview', methods=['GET'])
 def get_overview():
-    """学情概览：学生总数、G3平均成绩、高风险预警人数"""
-    total_result = query_one("SELECT COUNT(*) AS total_students FROM student")
-    # 按得分率计算平均：20分制科目除以20，100分制科目(SUBJ_GENERAL)除以100
-    avg_result = query_one(
-        "SELECT ROUND(AVG(CASE WHEN subject_id = 'SUBJ_GENERAL' THEN score / 100.0 ELSE score / 20.0 END) * 100, 2) AS average_score_rate "
-        "FROM exam_score WHERE exam_stage = 'G3'"
-    )
-    risk_result = query_one(
-        "SELECT COUNT(*) AS high_risk_count FROM risk_alert WHERE risk_level = 'high'"
-    )
+    """学情概览：学生总数、G3平均成绩、高风险预警人数，可选 class_id 筛选"""
+    class_id = request.args.get('class_id', '')
+
+    if class_id:
+        total_result = query_one("SELECT COUNT(*) AS total_students FROM student WHERE student_class_id = %s", (class_id,))
+        avg_result = query_one(
+            "SELECT ROUND(AVG(CASE WHEN subject_id = 'SUBJ_GENERAL' THEN score / 100.0 ELSE score / 20.0 END) * 100, 2) AS average_score_rate "
+            "FROM exam_score WHERE exam_stage = 'G3' AND student_id IN (SELECT student_id FROM student WHERE student_class_id = %s)",
+            (class_id,)
+        )
+        risk_result = query_one(
+            "SELECT COUNT(*) AS high_risk_count FROM risk_alert ra JOIN student s ON ra.student_id = s.student_id WHERE ra.risk_level = 'high' AND s.student_class_id = %s",
+            (class_id,)
+        )
+    else:
+        total_result = query_one("SELECT COUNT(*) AS total_students FROM student")
+        avg_result = query_one(
+            "SELECT ROUND(AVG(CASE WHEN subject_id = 'SUBJ_GENERAL' THEN score / 100.0 ELSE score / 20.0 END) * 100, 2) AS average_score_rate "
+            "FROM exam_score WHERE exam_stage = 'G3'"
+        )
+        risk_result = query_one(
+            "SELECT COUNT(*) AS high_risk_count FROM risk_alert WHERE risk_level = 'high'"
+        )
 
     return jsonify({
         'total_students': total_result['total_students'] if total_result else 0,
@@ -24,16 +37,25 @@ def get_overview():
 
 @score_bp.route('/distribution', methods=['GET'])
 def get_distribution():
-    """成绩分布：按区间统计人数，支持按科目和考试阶段筛选，支持逐分统计"""
+    """成绩分布：按区间统计人数，支持按科目、考试阶段、班级筛选，支持逐分统计"""
     subject_id = request.args.get('subject_id', '')
     exam_stage = request.args.get('exam_stage', 'G3')
     granularity = request.args.get('granularity', '0')
+    class_id = request.args.get('class_id', '')
+
+    # 构建班级过滤子句
+    class_filter = ""
+    class_params = []
+    if class_id:
+        class_filter = "AND student_id IN (SELECT student_id FROM student WHERE student_class_id = %s) "
+        class_params = [class_id]
 
     # 逐分统计模式：每个分数对应一个计数
     if granularity == '1':
         max_score = 100 if subject_id == 'SUBJ_GENERAL' else 20
         sql = "SELECT score, COUNT(*) AS count FROM exam_score WHERE exam_stage = %s "
-        params = [exam_stage]
+        params = [exam_stage] + class_params
+        sql += class_filter
         if subject_id:
             sql += "AND subject_id = %s "
             params.append(subject_id)
@@ -69,7 +91,8 @@ def get_distribution():
         f"SELECT {bins_sql} AS score_range, COUNT(*) AS count "
         f"FROM exam_score WHERE exam_stage = %s "
     )
-    params = [exam_stage]
+    params = [exam_stage] + class_params
+    sql += class_filter
 
     if subject_id:
         sql += "AND subject_id = %s "

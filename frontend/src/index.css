@@ -424,6 +424,8 @@ a:hover {
 
 /* 触发器按钮 */
 .liquid-select-trigger {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   display: flex;
   align-items: center;
@@ -433,9 +435,9 @@ a:hover {
   font-size: 0.8125rem;
   font-family: var(--font-sans);
   color: #1a2b2b;
-  background: rgba(255,255,255,0.6);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(255,255,255,0.55);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
   border: 0.5px solid rgba(11,101,101,0.1);
   border-radius: 0.5rem;
   outline: none;
@@ -511,69 +513,21 @@ a:hover {
 .liquid-select-dropdown {
   position: fixed;
   z-index: 9999;
-  will-change: backdrop-filter, opacity, transform;
-}
-
-/* 打开状态 */
-.liquid-select-dropdown-open {
-  animation: liquid-select-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: auto;
-  clip-path: none;
-  opacity: 1;
-}
-
-/* 关闭状态 — 用 clip-path 隐藏但保持渲染，确保 backdrop-filter 始终生效 */
-.liquid-select-dropdown-closed {
-  opacity: 0;
-  pointer-events: none;
-  clip-path: inset(100%);
-}
-
-/* 向上展开 — 位置由 JS 计算，此处仅切换动画方向 */
-.liquid-select-dropdown-up.liquid-select-dropdown-open {
-  animation-name: liquid-select-enter-up;
-}
-
-@keyframes liquid-select-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes liquid-select-enter-up {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.liquid-select-dropdown-inner {
-  background: rgba(255,255,255,0.72);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
-  backdrop-filter: blur(20px) saturate(200%);
+  background: rgba(255,255,255,0.55);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   border: 0.5px solid rgba(11,101,101,0.1);
-  border-radius: 0.75rem;
+  border-radius: 0.625rem;
   box-shadow:
     0 0 0 0.5px rgba(11,101,101,0.04),
     0 2px 4px rgba(11,101,101,0.03),
     0 8px 24px rgba(11,101,101,0.06),
     0 16px 48px rgba(11,101,101,0.03),
     inset 0 0.5px 0 rgba(255,255,255,0.6);
-  padding: 0.3125rem;
-  position: relative;
+  /* 顶部高光线 */
 }
 
-/* 下拉面板顶部高光线 */
-.liquid-select-dropdown-inner::before {
+.liquid-select-dropdown::before {
   content: '';
   position: absolute;
   top: 0;
@@ -583,6 +537,41 @@ a:hover {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
   pointer-events: none;
   z-index: 1;
+}
+
+/* 打开状态 — 只控制可见性，不使用 transform/opacity 动画 */
+.liquid-select-dropdown-open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* 关闭状态 */
+.liquid-select-dropdown-closed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 向上展开 — 无需特殊动画 */
+.liquid-select-dropdown-up.liquid-select-dropdown-open {
+}
+
+/* 内层容器 — 承载 transform 动画，不影响外层 backdrop-filter */
+.liquid-select-dropdown-inner {
+  padding: 0.25rem;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-select-dropdown-open .liquid-select-dropdown-inner {
+  transform: translateY(0);
+}
+
+.liquid-select-dropdown-closed .liquid-select-dropdown-inner {
+  transform: translateY(-6px);
+}
+
+.liquid-select-dropdown-up.liquid-select-dropdown-closed .liquid-select-dropdown-inner {
+  transform: translateY(6px);
 }
 
 /* 选项 */
@@ -1009,4 +998,9 @@ a:hover {
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+}
+
+.sortable-th svg {
+  display: inline;
+  vertical-align: middle;
 }

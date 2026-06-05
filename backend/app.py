@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from db import execute
 from routes.student import student_bp
 from routes.score import score_bp
 from routes.alert import alert_bp
@@ -9,6 +10,12 @@ from routes.teacher import teacher_bp
 
 app = Flask(__name__)
 CORS(app)
+
+# 数据库迁移：为 risk_alert 表添加 risk_score 列
+try:
+    execute("ALTER TABLE risk_alert ADD COLUMN risk_score INT DEFAULT 0")
+except Exception:
+    pass  # 列已存在，忽略
 
 app.register_blueprint(student_bp, url_prefix='/api/students')
 app.register_blueprint(score_bp, url_prefix='/api/scores')

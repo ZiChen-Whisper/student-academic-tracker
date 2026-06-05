@@ -95,11 +95,12 @@ def save_alert(risk_info: dict):
         risk_info: predict_risk 的返回值
     """
     execute(
-        """INSERT INTO risk_alert (student_id, risk_level, alert_time, risk_factors)
-           VALUES (%s, %s, %s, %s)""",
+        """INSERT INTO risk_alert (student_id, risk_level, risk_score, alert_time, risk_factors)
+           VALUES (%s, %s, %s, %s, %s)""",
         (
             risk_info['student_id'],
             risk_info['risk_level'],
+            risk_info['risk_score'],
             datetime.now(),
             json.dumps(risk_info['features'], ensure_ascii=False)
         )

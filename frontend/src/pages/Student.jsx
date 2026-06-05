@@ -7,6 +7,7 @@ import LiquidCard from '../components/LiquidCard';
 import MetricCard from '../components/MetricCard';
 import ChartTooltip from '../components/ChartTooltip';
 import ChartFilterBtn from '../components/ChartFilterBtn';
+import { useRole } from '../contexts/RoleContext';
 import {
   getStudents, getStudent, getScoreTrend, getSuggestions, generateSuggestion,
   getAlerts, updateSuggestionFeedback,
@@ -55,6 +56,8 @@ const RiskBadge = ({ level }) => {
 const SORT_DIR = { asc: 'asc', desc: 'desc' };
 
 export default function Student() {
+  const { role, selectedTeacherClassId } = useRole();
+  const classId = role === 'teacher' && selectedTeacherClassId ? selectedTeacherClassId : '';
   // 学生列表
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,14 +83,15 @@ export default function Student() {
   // 加载所有学生
   useEffect(() => {
     setLoading(true);
-    getStudents()
+    const params = classId ? { class_id: classId } : {};
+    getStudents(params)
       .then((res) => {
         const data = res.data?.data || res.data || [];
         setStudents(Array.isArray(data) ? data : []);
       })
       .catch((err) => console.error('获取学生列表失败:', err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [classId]);
 
   // 模糊搜索过滤
   const filteredStudents = students.filter((s) => {

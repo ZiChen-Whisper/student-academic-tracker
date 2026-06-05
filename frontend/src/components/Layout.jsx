@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Search, ChevronDown, X } from 'lucide-react';
+import { GraduationCap, User, Users, Search, ChevronDown, X, Shield } from 'lucide-react';
 import { useRole } from '../contexts/RoleContext';
-import { searchStudents, searchTeachers } from '../api';
+import { searchStudents, searchTeachers, getTeachers, getStudents, getTeacherClasses } from '../api';
 
 const ROLE_CONFIG = {
+  admin: { label: '管理员', icon: Shield, path: '/' },
   teacher: { label: '教师', icon: GraduationCap, path: '/' },
   student: { label: '学生', icon: User, path: '/student-view' },
   parent: { label: '家长', icon: Users, path: '/parent-view' },
@@ -12,6 +14,12 @@ const ROLE_CONFIG = {
 
 // 各角色的导航菜单
 const NAV_ITEMS = {
+  admin: [
+    { to: '/', label: '学情概览', end: true },
+    { to: '/student', label: '学生详情' },
+    { to: '/nl2sql', label: 'AI 查询' },
+    { to: '/alert', label: '风险预警' },
+  ],
   teacher: [
     { to: '/', label: '学情概览', end: true },
     { to: '/student', label: '学生详情' },
@@ -30,6 +38,10 @@ const NAV_ITEMS = {
 
 // 验证方式选项
 const VERIFY_METHODS = {
+  admin: [
+    { key: 'name', label: '管理员姓名' },
+    { key: 'id', label: '管理员ID' },
+  ],
   teacher: [
     { key: 'name', label: '教师姓名' },
     { key: 'id', label: '教师ID' },
@@ -49,12 +61,38 @@ export default function Layout() {
     role, switchRole,
     selectedStudentId, selectedStudentName, selectStudent, clearStudent,
     selectedTeacherId, selectedTeacherName, selectTeacher, clearTeacher,
+    selectedAdminId, selectedAdminName, selectAdmin, clearAdmin,
+    setSelectedTeacherClassId,
   } = useRole();
   const navigate = useNavigate();
 
   // 角色下拉
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [roleDropdownReady, setRoleDropdownReady] = useState(false);
   const roleDropdownRef = useRef(null);
+  const roleTriggerRef = useRef(null);
+  const [roleDropdownPos, setRoleDropdownPos] = useState({ top: 0, left: 0 });
+
+  // 计算角色下拉面板位置
+  const updateRoleDropdownPos = useCallback(() => {
+    if (roleTriggerRef.current) {
+      const rect = roleTriggerRef.current.getBoundingClientRect();
+      setRoleDropdownPos({
+        top: rect.bottom + 6,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, []);
+
+  // 打开角色下拉时，延迟显示避免 backdrop-filter 闪烁
+  useEffect(() => {
+    if (!showRoleDropdown) {
+      setRoleDropdownReady(false);
+      return;
+    }
+    const timer = setTimeout(() => setRoleDropdownReady(true), 30);
+    return () => clearTimeout(timer);
+  }, [showRoleDropdown]);
 
   // 身份验证浮窗
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -63,11 +101,14 @@ export default function Layout() {
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // 点击外部关闭角色下拉
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target)) {
+      const triggerEl = roleDropdownRef.current;
+      const panelEl = document.getElementById('role-dropdown-portal');
+      if (triggerEl && !triggerEl.contains(e.target) && (!panelEl || !panelEl.contains(e.target))) {
         setShowRoleDropdown(false);
       }
     };
@@ -83,6 +124,7 @@ export default function Layout() {
     setVerifyMethod(VERIFY_METHODS[newRole][0].key);
     setKeyword('');
     setSearchResults([]);
+    setHasSearched(false);
     setLoginModalOpen(true);
   };
 
@@ -90,6 +132,7 @@ export default function Layout() {
   const handleSearch = async () => {
     if (!keyword.trim()) return;
     setSearching(true);
+    setHasSearched(true);
     try {
       if (loginRole === 'teacher') {
         const res = await searchTeachers({ keyword: keyword.trim() });
@@ -107,9 +150,22 @@ export default function Layout() {
   };
 
   // 选择身份
-  const handleSelect = (person) => {
+  const handleSelect = async (person) => {
     if (loginRole === 'teacher') {
       selectTeacher(person.teacher_id, person.teacher_name);
+      // 获取教师的班级信息
+      try {
+        const res = await getTeacherClasses(person.teacher_id);
+        const classes = res.data?.data?.homeroom_classes || res.data?.data?.instructor_classes || [];
+        if (classes.length > 0) {
+          setSelectedTeacherClassId(classes[0].class_id);
+        } else {
+          setSelectedTeacherClassId('');
+        }
+      } catch (err) {
+        console.error('获取教师班级失败:', err);
+        setSelectedTeacherClassId('');
+      }
     } else {
       selectStudent(person.student_id, person.student_name);
     }
@@ -124,16 +180,72 @@ export default function Layout() {
     setLoginRole(null);
     setKeyword('');
     setSearchResults([]);
+    setHasSearched(false);
+  };
+
+  // 快捷登录 - 管理员
+  const handleAdminQuickLogin = () => {
+    selectAdmin('admin', '系统管理员');
+    switchRole('admin');
+    setLoginModalOpen(false);
+    navigate('/');
+  };
+
+  // 快捷登录 - 随机教师
+  const handleTeacherQuickLogin = async () => {
+    try {
+      const res = await getTeachers();
+      const teachers = res.data?.data || [];
+      if (teachers.length > 0) {
+        const t = teachers[0];
+        selectTeacher(t.teacher_id, t.teacher_name);
+        // 获取教师的班级信息
+        try {
+          const classRes = await getTeacherClasses(t.teacher_id);
+          const classes = classRes.data?.data?.homeroom_classes || classRes.data?.data?.instructor_classes || [];
+          if (classes.length > 0) {
+            setSelectedTeacherClassId(classes[0].class_id);
+          } else {
+            setSelectedTeacherClassId('');
+          }
+        } catch (err) {
+          setSelectedTeacherClassId('');
+        }
+        switchRole('teacher');
+        setLoginModalOpen(false);
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('快捷登录失败:', err);
+    }
+  };
+
+  // 快捷登录 - 随机学生
+  const handleStudentQuickLogin = async () => {
+    try {
+      const res = await getStudents();
+      const students = res.data?.data || [];
+      if (students.length > 0) {
+        const s = students[0];
+        selectStudent(s.student_id, s.student_name);
+        switchRole(loginRole);
+        setLoginModalOpen(false);
+        navigate(ROLE_CONFIG[loginRole].path);
+      }
+    } catch (err) {
+      console.error('快捷登录失败:', err);
+    }
   };
 
   // 当前身份显示
   const currentIdentity = (() => {
+    if (role === 'admin') return '系统管理员';
     if (role === 'teacher' && selectedTeacherId) return selectedTeacherName;
     if (role !== 'teacher' && selectedStudentId) return selectedStudentName;
     return null;
   })();
 
-  const navItems = NAV_ITEMS[role] || NAV_ITEMS.teacher;
+  const navItems = NAV_ITEMS[role] || NAV_ITEMS.admin;
   const currentRoleConfig = ROLE_CONFIG[role];
 
   return (
@@ -165,9 +277,16 @@ export default function Layout() {
 
           {/* 角色切换按钮 */}
           <div ref={roleDropdownRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <button
+            <div
+              ref={roleTriggerRef}
               className="liquid-nav-item"
-              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                if (!showRoleDropdown) updateRoleDropdownPos();
+                setShowRoleDropdown(!showRoleDropdown);
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!showRoleDropdown) updateRoleDropdownPos(); setShowRoleDropdown(!showRoleDropdown); } }}
               style={{
                 background: 'rgba(11,101,101,0.08)',
                 color: 'var(--primary)',
@@ -176,6 +295,8 @@ export default function Layout() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.375rem',
+                cursor: 'pointer',
+                outline: 'none',
               }}
             >
               {(() => { const Icon = currentRoleConfig.icon; return <Icon size={14} />; })()}
@@ -186,26 +307,31 @@ export default function Layout() {
                 </span>
               )}
               <ChevronDown size={12} style={{ opacity: 0.6 }} />
-            </button>
+            </div>
 
-            {/* 角色下拉 */}
-            {showRoleDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '0.375rem',
+            {/* 角色下拉 — Portal 渲染到 body，避免导航栏 backdrop-filter 合成层阻止模糊 */}
+            {showRoleDropdown && createPortal(
+              <div id="role-dropdown-portal" style={{
+                position: 'fixed',
+                top: roleDropdownPos.top,
+                right: roleDropdownPos.right,
                 width: 200,
-                zIndex: 1000,
+                zIndex: 9999,
+                opacity: roleDropdownReady ? 1 : 0,
+                transition: 'opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                pointerEvents: roleDropdownReady ? 'auto' : 'none',
+                background: 'rgba(255,255,255,0.55)',
+                backdropFilter: 'blur(16px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                border: '0.5px solid rgba(11,101,101,0.1)',
+                borderRadius: '0.625rem',
+                boxShadow: '0 0 0 0.5px rgba(11,101,101,0.04), 0 2px 4px rgba(11,101,101,0.03), 0 8px 24px rgba(11,101,101,0.06), 0 16px 48px rgba(11,101,101,0.03), inset 0 0.5px 0 rgba(255,255,255,0.6)',
               }}>
                 <div style={{
-                  background: 'rgba(255,255,255,0.85)',
-                  backdropFilter: 'blur(24px) saturate(180%)',
-                  border: '0.5px solid rgba(11,101,101,0.1)',
-                  borderRadius: '0.75rem',
-                  boxShadow: '0 8px 32px rgba(11,101,101,0.1), 0 0 0 0.5px rgba(11,101,101,0.04)',
-                  padding: '0.375rem',
-                  overflow: 'hidden',
+                  padding: '0.25rem',
+                  position: 'relative',
+                  transform: roleDropdownReady ? 'translateY(0)' : 'translateY(-6px)',
+                  transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}>
                   {Object.entries(ROLE_CONFIG).map(([key, config]) => {
                     const Icon = config.icon;
@@ -252,7 +378,8 @@ export default function Layout() {
                     );
                   })}
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         </div>
@@ -339,7 +466,7 @@ export default function Layout() {
                   <button
                     key={method.key}
                     className={`liquid-tab ${verifyMethod === method.key ? 'active' : ''}`}
-                    onClick={() => { setVerifyMethod(method.key); setKeyword(''); setSearchResults([]); }}
+                    onClick={() => { setVerifyMethod(method.key); setKeyword(''); setSearchResults([]); setHasSearched(false); }}
                   >
                     {method.label}
                   </button>
@@ -356,7 +483,7 @@ export default function Layout() {
                   value={keyword}
                   onChange={(e) => {
                     setKeyword(e.target.value);
-                    if (!e.target.value.trim()) setSearchResults([]);
+                    if (!e.target.value.trim()) { setSearchResults([]); setHasSearched(false); }
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   style={{ flex: 1 }}
@@ -420,17 +547,65 @@ export default function Layout() {
               </div>
             )}
 
-            {/* 无结果 */}
+            {/* 搜索中 */}
             {searching && (
               <p className="text-tertiary" style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.8125rem' }}>
                 搜索中...
               </p>
             )}
-            {!searching && keyword.trim() && searchResults.length === 0 && (
+            {/* 无结果 - 仅在已搜索后显示 */}
+            {!searching && hasSearched && searchResults.length === 0 && (
               <p className="text-tertiary" style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.8125rem' }}>
                 未找到匹配结果
               </p>
             )}
+
+            {/* 分割线 + 快捷登录 */}
+            <div style={{
+              marginTop: '1rem',
+              paddingTop: '1rem',
+              borderTop: '0.5px solid rgba(11,101,101,0.08)',
+            }}>
+              <div style={{
+                fontSize: '0.6875rem',
+                color: 'rgba(11,101,101,0.45)',
+                marginBottom: '0.625rem',
+                fontWeight: 500,
+              }}>
+                快捷登录
+              </div>
+
+              {loginRole === 'admin' && (
+                <button
+                  className="liquid-btn liquid-btn-primary"
+                  onClick={handleAdminQuickLogin}
+                  style={{ width: '100%' }}
+                >
+                  <Shield size={14} style={{ marginRight: '0.375rem' }} />
+                  以管理员身份进入
+                </button>
+              )}
+
+              {loginRole === 'teacher' && (
+                <button
+                  className="liquid-btn"
+                  onClick={handleTeacherQuickLogin}
+                  style={{ width: '100%' }}
+                >
+                  随机选择一位教师
+                </button>
+              )}
+
+              {(loginRole === 'student' || loginRole === 'parent') && (
+                <button
+                  className="liquid-btn"
+                  onClick={handleStudentQuickLogin}
+                  style={{ width: '100%' }}
+                >
+                  随机选择一位学生
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
