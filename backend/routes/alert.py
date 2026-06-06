@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from db import query_all, query_one, execute
 from services.risk_service import calculate_risk_for_all, train_risk_model
+from services.change_history_service import record_change
 
 alert_bp = Blueprint('alert', __name__)
 
@@ -38,7 +39,11 @@ def get_alerts():
 def generate_alerts():
     """为所有学生重新生成预警"""
     try:
-        alert_list = calculate_risk_for_all()
+        data = request.get_json(silent=True) or {}
+        operator_role = data.get('operator_role', 'admin')
+        operator_name = data.get('operator_name', '管理员')
+        operator_id = data.get('operator_id') or None
+        alert_list = calculate_risk_for_all(operator_role=operator_role, operator=operator_name, operator_id=operator_id)
         # 统计各等级数量
         stats = {'high': 0, 'medium': 0, 'low': 0}
         for alert in alert_list:
@@ -74,6 +79,15 @@ def intervene_alert(alert_id):
         "UPDATE risk_alert SET intervention_status = %s, intervention_measure = %s WHERE alert_id = %s",
         (status, measure, alert_id)
     )
+    # 获取操作人信息
+    operator_role = data.get('operator_role', 'admin')
+    operator_name = data.get('operator_name', '管理员')
+    operator_id = data.get('operator_id', '')
+    record_change('UPDATE', 'risk_alert', record_id=str(alert_id),
+                  description=f'更新干预状态为{status}',
+                  change_detail={'intervention_status': status, 'intervention_measure': measure},
+                  operator=operator_name, operator_role=operator_role,
+                  operator_id=operator_id if operator_id else None)
     return jsonify({'message': '干预状态更新成功'})
 
 

@@ -3,11 +3,11 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { RefreshCw, ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import LiquidCard from '../components/LiquidCard';
-import LiquidSelect from '../components/LiquidSelect';
-import ChartTooltip from '../components/ChartTooltip';
-import { useRole } from '../contexts/RoleContext';
-import { getAlerts, generateAlerts, updateIntervention, getAlertStats } from '../api';
+import LiquidCard from '../../components/LiquidCard';
+import LiquidSelect from '../../components/LiquidSelect';
+import ChartTooltip from '../../components/ChartTooltip';
+import { useRole } from '../../contexts/RoleContext';
+import { getAlerts, generateAlerts, updateIntervention, getAlertStats } from '../../api';
 
 const RISK_COLORS = {
   low: '#1a8a5a',
@@ -31,9 +31,9 @@ const STATUS_MAP = {
 
 const SORT_DIR = { asc: 'asc', desc: 'desc' };
 
-export default function Alert() {
-  const { role, selectedTeacherClassId } = useRole();
-  const classId = role === 'teacher' && selectedTeacherClassId ? selectedTeacherClassId : '';
+export default function TeacherAlert() {
+  const { selectedTeacherClassId, selectedTeacherId, selectedTeacherName } = useRole();
+  const classId = selectedTeacherClassId || '';
   const [alerts, setAlerts] = useState([]);
   const [alertStats, setAlertStats] = useState(null);
   const [riskFilter, setRiskFilter] = useState('');
@@ -83,7 +83,7 @@ export default function Alert() {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      await generateAlerts();
+      await generateAlerts({ operator_role: 'teacher', operator_name: selectedTeacherName || '', operator_id: selectedTeacherId || '' });
       await fetchAlerts();
     } catch (err) {
       console.error('生成预警失败:', err);
@@ -125,6 +125,9 @@ export default function Alert() {
       await updateIntervention(id, {
         intervention_status: interveneStatus,
         intervention_measure: interveneMeasure.trim(),
+        operator_role: 'teacher',
+        operator_name: selectedTeacherName || '',
+        operator_id: selectedTeacherId || '',
       });
       setInterveneMsg({ type: 'success', text: '干预状态更新成功' });
       await fetchAlerts();

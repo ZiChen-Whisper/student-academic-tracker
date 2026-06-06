@@ -7,6 +7,7 @@ from routes.alert import alert_bp
 from routes.suggestion import suggestion_bp
 from routes.nl2sql import nl2sql_bp
 from routes.teacher import teacher_bp
+from routes.change_history import change_history_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +24,7 @@ app.register_blueprint(alert_bp, url_prefix='/api/alerts')
 app.register_blueprint(suggestion_bp, url_prefix='/api/suggestions')
 app.register_blueprint(nl2sql_bp, url_prefix='/api/nl2sql')
 app.register_blueprint(teacher_bp, url_prefix='/api/teachers')
+app.register_blueprint(change_history_bp, url_prefix='/api/change-history')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, use_reloader=False)

@@ -5,6 +5,7 @@
 import json
 from datetime import datetime
 from db import query_all, query_one, execute
+from services.change_history_service import record_change
 
 
 # ============================================================
@@ -107,7 +108,7 @@ def save_alert(risk_info: dict):
     )
 
 
-def calculate_risk_for_all() -> list:
+def calculate_risk_for_all(operator_role='system', operator='系统', operator_id=None) -> list:
     """
     查询所有学生的 G3 成绩、出勤率、动机水平，
     对每个学生调用 predict_risk，
@@ -115,7 +116,12 @@ def calculate_risk_for_all() -> list:
     返回预警列表。
     """
     # 清空旧预警数据
+    old_count_result = query_one("SELECT COUNT(*) AS cnt FROM risk_alert")
+    old_count = old_count_result['cnt'] if old_count_result else 0
     execute("DELETE FROM risk_alert")
+    if old_count > 0:
+        record_change('BATCH_DELETE', 'risk_alert', description=f'清空旧预警数据（{old_count}条）',
+                      operator_role=operator_role, operator=operator, operator_id=operator_id)
 
     # 查询所有学生的 G3 平均成绩
     score_data = query_all(
@@ -163,6 +169,10 @@ def calculate_risk_for_all() -> list:
 
         risk_info = predict_risk(student_data)
         save_alert(risk_info)
+        record_change('INSERT', 'risk_alert', record_id=student_id,
+                      description=f'新增{risk_info["risk_level"]}风险预警',
+                      change_detail={'risk_level': risk_info['risk_level'], 'risk_score': risk_info['risk_score'], 'features': risk_info['features']},
+                      operator_role=operator_role, operator=operator, operator_id=operator_id)
         alert_list.append(risk_info)
 
     return alert_list

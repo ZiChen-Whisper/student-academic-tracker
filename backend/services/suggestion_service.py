@@ -6,6 +6,7 @@ from datetime import datetime
 from openai import OpenAI
 from config import LLM_CONFIG
 from db import query_all, query_one, execute
+from services.change_history_service import record_change
 
 # 初始化 DeepSeek 客户端
 _client = OpenAI(api_key=LLM_CONFIG['api_key'], base_url=LLM_CONFIG['base_url'])
@@ -28,7 +29,7 @@ SYSTEM_PROMPT = """你是一位经验丰富的学业顾问，你的任务是根�
 """
 
 
-def generate_suggestion(student_id: str) -> dict:
+def generate_suggestion(student_id: str, operator_role='system', operator='系统', operator_id=None) -> dict:
     """
     为指定学生生成个性化学习建议
 
@@ -181,13 +182,18 @@ def generate_suggestion(student_id: str) -> dict:
         (student_id, suggestion_content, datetime.now())
     )
 
+    record_change('GENERATE', 'learning_suggestion', record_id=student_id,
+                  description=f'为{student["student_name"]}生成AI学习建议',
+                  change_detail={'student_id': student_id, 'student_name': student['student_name']},
+                  operator_role=operator_role, operator=operator, operator_id=operator_id)
+
     return {
         'student_id': student_id,
         'suggestion': suggestion_content
     }
 
 
-def update_feedback(suggestion_id: int, feedback: str):
+def update_feedback(suggestion_id: int, feedback: str, operator_role='student', operator='学生', operator_id=None):
     """
     更新学习建议的学生反馈
 
@@ -214,3 +220,9 @@ def update_feedback(suggestion_id: int, feedback: str):
         "UPDATE learning_suggestion SET student_feedback = %s WHERE suggestion_id = %s",
         (feedback, suggestion_id)
     )
+
+    feedback_labels = {'satisfied': '满意', 'neutral': '一般', 'unsatisfied': '不满意'}
+    record_change('UPDATE', 'learning_suggestion', record_id=str(suggestion_id),
+                  description=f'更新建议反馈为{feedback_labels.get(feedback, feedback)}',
+                  change_detail={'suggestion_id': suggestion_id, 'student_feedback': feedback},
+                  operator=operator, operator_role=operator_role, operator_id=operator_id)
