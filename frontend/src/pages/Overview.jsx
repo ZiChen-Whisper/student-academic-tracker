@@ -3,7 +3,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
-import { Shield, GraduationCap } from 'lucide-react';
 
 // 科目满分映射
 const SUBJECT_FULL_SCORE = {
@@ -147,40 +146,6 @@ export default function Overview() {
 
   return (
     <div>
-      {/* 欢迎横幅 */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(11,101,101,0.06) 0%, rgba(11,101,101,0.02) 100%)',
-        border: '0.5px solid rgba(11,101,101,0.08)',
-        borderLeft: '4px solid var(--primary)',
-        borderRadius: '0.75rem',
-        padding: '1.25rem 1.5rem',
-        marginBottom: '1.25rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-      }}>
-        <div style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          background: 'rgba(11,101,101,0.08)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          {role === 'admin' ? <Shield size={22} style={{ color: 'var(--primary)' }} /> : <GraduationCap size={22} style={{ color: 'var(--primary)' }} />}
-        </div>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#095050', lineHeight: 1.3 }}>
-            {role === 'admin' ? '欢迎回来，系统管理员' : `欢迎回来，${selectedTeacherName || ''}老师`}
-          </h1>
-          <p style={{ margin: 0, fontSize: '0.8125rem', color: 'rgba(11,101,101,0.5)', marginTop: '0.25rem' }}>
-            {role === 'admin' ? '全校学情数据一览' : '班级学情数据一览'}
-          </p>
-        </div>
-      </div>
-
       {/* 指标卡片 */}
       <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginBottom: '1.25rem' }}>
         <MetricCard icon="users" label="学生总数" value={overview?.total_students ?? '--'} />
