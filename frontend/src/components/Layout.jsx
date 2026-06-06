@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Search, ChevronDown, X, Shield } from 'lucide-react';
+import { GraduationCap, User, Users, Search, ChevronDown, X, Shield, Menu } from 'lucide-react';
 import { useRole } from '../contexts/RoleContext';
 import { searchStudents, searchTeachers, getTeachers, getStudents, getTeacherClasses } from '../api';
 
@@ -15,23 +15,27 @@ const ROLE_CONFIG = {
 // 各角色的导航菜单
 const NAV_ITEMS = {
   admin: [
-    { to: '/', label: '学情概览', end: true },
+    { to: '/', label: '主页', end: true },
+    { to: '/overview', label: '学情概览' },
     { to: '/student', label: '学生详情' },
     { to: '/nl2sql', label: 'AI 查询' },
     { to: '/alert', label: '风险预警' },
   ],
   teacher: [
-    { to: '/', label: '学情概览', end: true },
+    { to: '/', label: '主页', end: true },
+    { to: '/overview', label: '学情概览' },
     { to: '/student', label: '学生详情' },
     { to: '/nl2sql', label: 'AI 查询' },
     { to: '/alert', label: '风险预警' },
   ],
   student: [
-    { to: '/student-view', label: '成绩趋势', end: true },
+    { to: '/student-view', label: '主页' },
+    { to: '/student-view/trends', label: '成绩趋势' },
     { to: '/student-view/suggestions', label: '学习建议' },
   ],
   parent: [
-    { to: '/parent-view', label: '成绩报告', end: true },
+    { to: '/parent-view', label: '主页' },
+    { to: '/parent-view/report', label: '成绩报告' },
     { to: '/parent-view/alerts', label: '预警通知' },
   ],
 };
@@ -73,13 +77,32 @@ export default function Layout() {
   const roleTriggerRef = useRef(null);
   const [roleDropdownPos, setRoleDropdownPos] = useState({ top: 0, left: 0 });
 
+  // 移动端菜单
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuClosing, setMobileMenuClosing] = useState(false);
+  const mobileMenuTimerRef = useRef(null);
+
+  const openMobileMenu = useCallback(() => {
+    if (mobileMenuTimerRef.current) clearTimeout(mobileMenuTimerRef.current);
+    setMobileMenuClosing(false);
+    setMobileMenuOpen(true);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuClosing(true);
+    mobileMenuTimerRef.current = setTimeout(() => {
+      setMobileMenuOpen(false);
+      setMobileMenuClosing(false);
+    }, 200);
+  }, []);
+
   // 计算角色下拉面板位置
   const updateRoleDropdownPos = useCallback(() => {
     if (roleTriggerRef.current) {
       const rect = roleTriggerRef.current.getBoundingClientRect();
       setRoleDropdownPos({
         top: rect.bottom + 6,
-        right: window.innerWidth - rect.right,
+        left: rect.right - 240,
       });
     }
   }, []);
@@ -114,6 +137,13 @@ export default function Layout() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 清理移动菜单定时器
+  useEffect(() => {
+    return () => {
+      if (mobileMenuTimerRef.current) clearTimeout(mobileMenuTimerRef.current);
+    };
   }, []);
 
   // 切换角色 — 弹出身份验证浮窗
@@ -184,22 +214,24 @@ export default function Layout() {
   };
 
   // 快捷登录 - 管理员
-  const handleAdminQuickLogin = () => {
+  const handleAdminQuickLogin = (e) => {
+    e?.stopPropagation();
     selectAdmin('admin', '系统管理员');
     switchRole('admin');
     setLoginModalOpen(false);
+    setShowRoleDropdown(false);
     navigate('/');
   };
 
   // 快捷登录 - 随机教师
-  const handleTeacherQuickLogin = async () => {
+  const handleTeacherQuickLogin = async (e) => {
+    e?.stopPropagation();
     try {
       const res = await getTeachers();
       const teachers = res.data?.data || [];
       if (teachers.length > 0) {
         const t = teachers[0];
         selectTeacher(t.teacher_id, t.teacher_name);
-        // 获取教师的班级信息
         try {
           const classRes = await getTeacherClasses(t.teacher_id);
           const classes = classRes.data?.data?.homeroom_classes || classRes.data?.data?.instructor_classes || [];
@@ -213,6 +245,7 @@ export default function Layout() {
         }
         switchRole('teacher');
         setLoginModalOpen(false);
+        setShowRoleDropdown(false);
         navigate('/');
       }
     } catch (err) {
@@ -221,16 +254,19 @@ export default function Layout() {
   };
 
   // 快捷登录 - 随机学生
-  const handleStudentQuickLogin = async () => {
+  const handleStudentQuickLogin = async (e, targetRole) => {
+    e?.stopPropagation();
+    const r = targetRole || loginRole;
     try {
       const res = await getStudents();
       const students = res.data?.data || [];
       if (students.length > 0) {
         const s = students[0];
         selectStudent(s.student_id, s.student_name);
-        switchRole(loginRole);
+        switchRole(r);
         setLoginModalOpen(false);
-        navigate(ROLE_CONFIG[loginRole].path);
+        setShowRoleDropdown(false);
+        navigate(ROLE_CONFIG[r].path);
       }
     } catch (err) {
       console.error('快捷登录失败:', err);
@@ -256,6 +292,7 @@ export default function Layout() {
           <span>学业跟踪预警系统</span>
         </div>
 
+        {/* 桌面端导航链接 */}
         <div className="liquid-nav-links">
           {navItems.map((item) => (
             <NavLink
@@ -314,8 +351,8 @@ export default function Layout() {
               <div id="role-dropdown-portal" style={{
                 position: 'fixed',
                 top: roleDropdownPos.top,
-                right: roleDropdownPos.right,
-                width: 200,
+                left: roleDropdownPos.left,
+                width: 240,
                 zIndex: 9999,
                 opacity: roleDropdownReady ? 1 : 0,
                 transition: 'opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -336,25 +373,17 @@ export default function Layout() {
                   {Object.entries(ROLE_CONFIG).map(([key, config]) => {
                     const Icon = config.icon;
                     const isActive = role === key;
+                    const quickLoginLabel = key === 'admin' ? '快捷进入' : key === 'teacher' ? '随机教师' : '随机学生';
+                    const quickLoginHandler = key === 'admin' ? handleAdminQuickLogin : key === 'teacher' ? handleTeacherQuickLogin : (e) => handleStudentQuickLogin(e, key);
                     return (
-                      <button
+                      <div
                         key={key}
-                        onClick={() => handleSwitchRole(key)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.625rem',
-                          width: '100%',
-                          padding: '0.5rem 0.75rem',
                           borderRadius: '0.4375rem',
-                          border: 'none',
                           background: isActive ? 'rgba(11,101,101,0.08)' : 'transparent',
-                          color: isActive ? 'var(--primary)' : '#2a3d3d',
-                          fontWeight: isActive ? 600 : 400,
-                          fontSize: '0.8125rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          fontFamily: 'inherit',
+                          transition: 'background 0.15s ease',
                         }}
                         onMouseEnter={(e) => {
                           if (!isActive) e.currentTarget.style.background = 'rgba(11,101,101,0.04)';
@@ -363,18 +392,69 @@ export default function Layout() {
                           if (!isActive) e.currentTarget.style.background = 'transparent';
                         }}
                       >
-                        <Icon size={16} />
-                        <span>{config.label}视角</span>
-                        {isActive && (
-                          <span style={{
-                            marginLeft: 'auto',
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background: 'var(--primary)',
-                          }} />
+                        <button
+                          onClick={() => handleSwitchRole(key)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.625rem',
+                            flex: 1,
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '0.4375rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: isActive ? 'var(--primary)' : '#2a3d3d',
+                            fontWeight: isActive ? 600 : 400,
+                            fontSize: '0.8125rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <Icon size={16} />
+                          <span>{config.label}视角</span>
+                          {isActive && (
+                            <span style={{
+                              marginLeft: 'auto',
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              background: 'var(--primary)',
+                            }} />
+                          )}
+                        </button>
+                        {!isActive && (
+                          <button
+                            onClick={quickLoginHandler}
+                            style={{
+                              flexShrink: 0,
+                              padding: '0.1875rem 0.5rem',
+                              marginRight: '0.375rem',
+                              borderRadius: '9999px',
+                              border: '0.5px solid rgba(11,101,101,0.1)',
+                              background: 'rgba(11,101,101,0.04)',
+                              color: 'var(--primary)',
+                              fontSize: '0.625rem',
+                              fontWeight: 500,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              fontFamily: 'inherit',
+                              lineHeight: 1.4,
+                              whiteSpace: 'nowrap',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(11,101,101,0.1)';
+                              e.currentTarget.style.borderColor = 'rgba(11,101,101,0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(11,101,101,0.04)';
+                              e.currentTarget.style.borderColor = 'rgba(11,101,101,0.1)';
+                            }}
+                          >
+                            {quickLoginLabel}
+                          </button>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -383,7 +463,66 @@ export default function Layout() {
             )}
           </div>
         </div>
+
+        {/* 移动端汉堡按钮 */}
+        <button
+          className="liquid-nav-hamburger"
+          onClick={() => mobileMenuOpen ? closeMobileMenu() : openMobileMenu()}
+          aria-label="菜单"
+        >
+          {mobileMenuOpen && !mobileMenuClosing ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </nav>
+
+      {/* 移动端菜单面板 */}
+      {mobileMenuOpen && (
+        <div className="liquid-mobile-menu" onClick={closeMobileMenu}>
+          <div className={`liquid-mobile-menu-inner${mobileMenuClosing ? ' closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `liquid-mobile-menu-item${isActive ? ' active' : ''}`}
+                end={item.end}
+                onClick={closeMobileMenu}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+
+            <div className="liquid-mobile-menu-divider" />
+
+            {/* 角色切换区域 */}
+            <div className="liquid-mobile-menu-section">
+              <div className="liquid-mobile-menu-section-title">切换身份</div>
+              {Object.entries(ROLE_CONFIG).map(([key, config]) => {
+                const Icon = config.icon;
+                const isActive = role === key;
+                return (
+                  <button
+                    key={key}
+                    className={`liquid-mobile-menu-item${isActive ? ' active' : ''}`}
+                    onClick={() => { closeMobileMenu(); handleSwitchRole(key); }}
+                    style={{ width: '100%', textAlign: 'left' }}
+                  >
+                    <Icon size={16} />
+                    <span>{config.label}视角</span>
+                    {isActive && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: 'var(--primary)',
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="page-container" style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}>
         <Outlet />
@@ -559,53 +698,6 @@ export default function Layout() {
                 未找到匹配结果
               </p>
             )}
-
-            {/* 分割线 + 快捷登录 */}
-            <div style={{
-              marginTop: '1rem',
-              paddingTop: '1rem',
-              borderTop: '0.5px solid rgba(11,101,101,0.08)',
-            }}>
-              <div style={{
-                fontSize: '0.6875rem',
-                color: 'rgba(11,101,101,0.45)',
-                marginBottom: '0.625rem',
-                fontWeight: 500,
-              }}>
-                快捷登录
-              </div>
-
-              {loginRole === 'admin' && (
-                <button
-                  className="liquid-btn liquid-btn-primary"
-                  onClick={handleAdminQuickLogin}
-                  style={{ width: '100%' }}
-                >
-                  <Shield size={14} style={{ marginRight: '0.375rem' }} />
-                  以管理员身份进入
-                </button>
-              )}
-
-              {loginRole === 'teacher' && (
-                <button
-                  className="liquid-btn"
-                  onClick={handleTeacherQuickLogin}
-                  style={{ width: '100%' }}
-                >
-                  随机选择一位教师
-                </button>
-              )}
-
-              {(loginRole === 'student' || loginRole === 'parent') && (
-                <button
-                  className="liquid-btn"
-                  onClick={handleStudentQuickLogin}
-                  style={{ width: '100%' }}
-                >
-                  随机选择一位学生
-                </button>
-              )}
-            </div>
           </div>
         </div>
       )}
