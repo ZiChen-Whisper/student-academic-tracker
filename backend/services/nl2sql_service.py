@@ -10,6 +10,7 @@ from datetime import datetime
 from openai import OpenAI
 from config import LLM_CONFIG
 from db import query_all, execute
+from services.change_history_service import record_change
 
 # ============================================================
 # 1. DDL_SCHEMA：12 张表的 CREATE TABLE 语句，供 Prompt 使用
@@ -250,7 +251,7 @@ def _is_safe_sql(sql: str) -> bool:
     return True
 
 
-def nl2sql(question: str) -> dict:
+def nl2sql(question: str, operator_role='system', operator='系统', operator_id=None) -> dict:
     """
     将自然语言问题转换为 SQL 并执行查询
 
@@ -328,5 +329,9 @@ def log_nl2sql(question: str, sql: str, execution_time_ms: int, is_correct: bool
                VALUES (%s, %s, %s, %s, %s)""",
             (question, sql, execution_time_ms, 1 if is_correct else 0, datetime.now())
         )
+        record_change('INSERT', 'nl2sql_log',
+                      description=f'自然语言查询：{question[:50]}',
+                      change_detail={'question': question, 'is_correct': is_correct, 'execution_time_ms': execution_time_ms},
+                      operator_role=operator_role, operator=operator, operator_id=operator_id)
     except Exception:
         pass  # 日志写入失败不影响主流程

@@ -9,5 +9,8 @@ def query():
     question = data.get('question', '')
     if not question:
         return jsonify({'error': '请输入问题'}), 400
-    result = nl2sql(question)
+    operator_role = data.get('operator_role', 'admin')
+    operator_name = data.get('operator_name', '管理员')
+    operator_id = data.get('operator_id') or None
+    result = nl2sql(question, operator_role=operator_role, operator=operator_name, operator_id=operator_id)
     return jsonify(result)

@@ -6,8 +6,8 @@ import { useRole } from '../contexts/RoleContext';
 import { searchStudents, searchTeachers, getTeachers, getStudents, getTeacherClasses } from '../api';
 
 const ROLE_CONFIG = {
-  admin: { label: '管理员', icon: Shield, path: '/' },
-  teacher: { label: '教师', icon: GraduationCap, path: '/' },
+  admin: { label: '管理员', icon: Shield, path: '/admin' },
+  teacher: { label: '教师', icon: GraduationCap, path: '/teacher' },
   student: { label: '学生', icon: User, path: '/student-view' },
   parent: { label: '家长', icon: Users, path: '/parent-view' },
 };
@@ -15,18 +15,19 @@ const ROLE_CONFIG = {
 // 各角色的导航菜单
 const NAV_ITEMS = {
   admin: [
-    { to: '/', label: '主页', end: true },
-    { to: '/overview', label: '学情概览' },
-    { to: '/student', label: '学生详情' },
-    { to: '/nl2sql', label: 'AI 查询' },
-    { to: '/alert', label: '风险预警' },
+    { to: '/admin', label: '主页', end: true },
+    { to: '/admin/overview', label: '学情概览' },
+    { to: '/admin/student', label: '学生详情' },
+    { to: '/admin/nl2sql', label: 'AI 查询' },
+    { to: '/admin/alert', label: '风险预警' },
+    { to: '/admin/history', label: '变更历史' },
   ],
   teacher: [
-    { to: '/', label: '主页', end: true },
-    { to: '/overview', label: '学情概览' },
-    { to: '/student', label: '学生详情' },
-    { to: '/nl2sql', label: 'AI 查询' },
-    { to: '/alert', label: '风险预警' },
+    { to: '/teacher', label: '主页', end: true },
+    { to: '/teacher/overview', label: '学情概览' },
+    { to: '/teacher/student', label: '学生详情' },
+    { to: '/teacher/nl2sql', label: 'AI 查询' },
+    { to: '/teacher/alert', label: '风险预警' },
   ],
   student: [
     { to: '/student-view', label: '主页' },
@@ -220,7 +221,7 @@ export default function Layout() {
     switchRole('admin');
     setLoginModalOpen(false);
     setShowRoleDropdown(false);
-    navigate('/');
+    navigate('/admin');
   };
 
   // 快捷登录 - 随机教师
@@ -246,7 +247,7 @@ export default function Layout() {
         switchRole('teacher');
         setLoginModalOpen(false);
         setShowRoleDropdown(false);
-        navigate('/');
+        navigate('/teacher');
       }
     } catch (err) {
       console.error('快捷登录失败:', err);

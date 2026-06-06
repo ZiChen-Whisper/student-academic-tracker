@@ -10,12 +10,11 @@ const SUBJECT_FULL_SCORE = {
   SUBJ_PORTUGUESE: 20,
   SUBJ_GENERAL: 100,
 };
-import MetricCard from '../components/MetricCard';
-import LiquidCard from '../components/LiquidCard';
-import ChartTooltip from '../components/ChartTooltip';
-import ChartFilterBtn from '../components/ChartFilterBtn';
-import { useRole } from '../contexts/RoleContext';
-import { getOverview, getScoreDistribution, getClassStats, getAlertStats } from '../api';
+import MetricCard from '../../components/MetricCard';
+import LiquidCard from '../../components/LiquidCard';
+import ChartTooltip from '../../components/ChartTooltip';
+import ChartFilterBtn from '../../components/ChartFilterBtn';
+import { getOverview, getScoreDistribution, getClassStats, getAlertStats } from '../../api';
 
 const SUBJECT_MAP = {
   SUBJ_GENERAL: '综合',
@@ -41,9 +40,7 @@ const RISK_LABELS = {
   high: '高风险',
 };
 
-export default function Overview() {
-  const { role, selectedTeacherClassId, selectedTeacherName } = useRole();
-  const classId = role === 'teacher' && selectedTeacherClassId ? selectedTeacherClassId : '';
+export default function AdminOverview() {
   const [overview, setOverview] = useState(null);
   const [distribution, setDistribution] = useState([]);
   const [classStats, setClassStats] = useState([]);
@@ -52,7 +49,7 @@ export default function Overview() {
   const [distSubject, setDistSubject] = useState('SUBJ_GENERAL');
 
   useEffect(() => {
-    const params = classId ? { class_id: classId } : {};
+    const params = {};
     Promise.all([getOverview(params), getScoreDistribution({ subject_id: 'SUBJ_GENERAL', granularity: 1, ...params }), getClassStats(params), getAlertStats(params)])
       .then(([ovRes, distRes, csRes, alRes]) => {
         setOverview(ovRes.data);
@@ -66,19 +63,19 @@ export default function Overview() {
         console.error('获取学情概览数据失败:', err);
       })
       .finally(() => setLoading(false));
-  }, [classId]);
+  }, []);
 
   // 科目切换时重新请求成绩分布
   useEffect(() => {
     if (loading) return;
-    const params = classId ? { class_id: classId } : {};
+    const params = {};
     getScoreDistribution({ subject_id: distSubject, granularity: 1, ...params })
       .then((res) => {
         const distData = res.data?.value || res.data?.data || (Array.isArray(res.data) ? res.data : []);
         setDistribution(distData);
       })
       .catch((err) => console.error('获取成绩分布失败:', err));
-  }, [distSubject, classId, loading]);
+  }, [distSubject, loading]);
 
   // 计算及格率：基于得分率>=60%（20分制>=12分，100分制>=60分）
   const passRate = (() => {

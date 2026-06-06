@@ -19,7 +19,11 @@ def get_suggestions(student_id):
 def generate(student_id):
     """为指定学生生成新的 AI 学习建议"""
     try:
-        result = generate_suggestion(student_id)
+        data = request.get_json(silent=True) or {}
+        operator_role = data.get('operator_role', 'admin')
+        operator_name = data.get('operator_name', '管理员')
+        operator_id = data.get('operator_id') or None
+        result = generate_suggestion(student_id, operator_role=operator_role, operator=operator_name, operator_id=operator_id)
         return jsonify(result)
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
@@ -35,7 +39,10 @@ def feedback(suggestion_id):
         return jsonify({'error': '请提供 feedback 字段'}), 400
 
     try:
-        update_feedback(suggestion_id, data['feedback'])
+        operator_role = data.get('operator_role', 'student')
+        operator_name = data.get('operator_name', '学生')
+        operator_id = data.get('operator_id') or None
+        update_feedback(suggestion_id, data['feedback'], operator_role=operator_role, operator=operator_name, operator_id=operator_id)
         return jsonify({'message': '反馈更新成功'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400

@@ -22,17 +22,20 @@ export const getScoreDistribution = (params) => api.get('/scores/distribution', 
 export const getClassStats = (params) => api.get('/scores/class-stats', { params });
 
 // NL2SQL
-export const nl2sqlQuery = (question) => api.post('/nl2sql/query', { question });
+export const nl2sqlQuery = (question, operatorInfo = {}) => api.post('/nl2sql/query', { question, ...operatorInfo });
 
 // 预警相关
 export const getAlerts = (params) => api.get('/alerts/', { params });
-export const generateAlerts = () => api.post('/alerts/generate');
+export const generateAlerts = (operatorInfo = {}) => api.post('/alerts/generate', operatorInfo);
 export const updateIntervention = (id, data) => api.put(`/alerts/${id}/intervene`, data);
 export const getAlertStats = (params) => api.get('/alerts/stats', { params });
 
 // 建议相关
 export const getSuggestions = (id) => api.get(`/suggestions/${id}`);
-export const generateSuggestion = (id) => api.post(`/suggestions/generate/${id}`);
+export const generateSuggestion = (id, operatorInfo = {}) => api.post(`/suggestions/generate/${id}`, operatorInfo);
 export const updateSuggestionFeedback = (id, data) => api.put(`/suggestions/${id}/feedback`, data);
+
+// 变更历史
+export const getChangeHistory = (params) => api.get('/change-history/', { params });
 
 export default api;

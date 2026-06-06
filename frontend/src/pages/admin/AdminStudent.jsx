@@ -3,15 +3,15 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { Search, User, BookOpen, Home, AlertTriangle, Sparkles, Clock, Brain, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import LiquidCard from '../components/LiquidCard';
-import MetricCard from '../components/MetricCard';
-import ChartTooltip from '../components/ChartTooltip';
-import ChartFilterBtn from '../components/ChartFilterBtn';
-import { useRole } from '../contexts/RoleContext';
+import LiquidCard from '../../components/LiquidCard';
+import MetricCard from '../../components/MetricCard';
+import ChartTooltip from '../../components/ChartTooltip';
+import ChartFilterBtn from '../../components/ChartFilterBtn';
+import { useRole } from '../../contexts/RoleContext';
 import {
   getStudents, getStudent, getScoreTrend, getSuggestions, generateSuggestion,
   getAlerts, updateSuggestionFeedback,
-} from '../api';
+} from '../../api';
 
 const SUBJECT_MAP = {
   SUBJ_MATH: '数学',
@@ -55,9 +55,8 @@ const RiskBadge = ({ level }) => {
 // 排序方向
 const SORT_DIR = { asc: 'asc', desc: 'desc' };
 
-export default function Student() {
-  const { role, selectedTeacherClassId } = useRole();
-  const classId = role === 'teacher' && selectedTeacherClassId ? selectedTeacherClassId : '';
+export default function AdminStudent() {
+  const { selectedAdminId, selectedAdminName } = useRole();
   // 学生列表
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +82,7 @@ export default function Student() {
   // 加载所有学生
   useEffect(() => {
     setLoading(true);
-    const params = classId ? { class_id: classId } : {};
+    const params = {};
     getStudents(params)
       .then((res) => {
         const data = res.data?.data || res.data || [];
@@ -91,7 +90,7 @@ export default function Student() {
       })
       .catch((err) => console.error('获取学生列表失败:', err))
       .finally(() => setLoading(false));
-  }, [classId]);
+  }, []);
 
   // 模糊搜索过滤
   const filteredStudents = students.filter((s) => {
@@ -186,7 +185,7 @@ export default function Student() {
     if (!selectedStudent) return;
     setGenerating(true);
     try {
-      await generateSuggestion(selectedStudent.student_id);
+      await generateSuggestion(selectedStudent.student_id, { operator_role: 'admin', operator_name: selectedAdminName || '管理员', operator_id: selectedAdminId || '' });
       const res = await getSuggestions(selectedStudent.student_id);
       setSuggestions(res.data || []);
     } catch (err) {

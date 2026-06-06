@@ -1,11 +1,17 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { RoleProvider } from './contexts/RoleContext';
 import Layout from './components/Layout';
-import Home from './pages/Home';
-import Overview from './pages/Overview';
-import Student from './pages/Student';
-import NL2SQL from './pages/NL2SQL';
-import Alert from './pages/Alert';
+import AdminHome from './pages/admin/AdminHome';
+import AdminOverview from './pages/admin/AdminOverview';
+import AdminStudent from './pages/admin/AdminStudent';
+import AdminNL2SQL from './pages/admin/AdminNL2SQL';
+import AdminAlert from './pages/admin/AdminAlert';
+import AdminChangeHistory from './pages/admin/AdminChangeHistory';
+import TeacherHome from './pages/teacher/TeacherHome';
+import TeacherOverview from './pages/teacher/TeacherOverview';
+import TeacherStudent from './pages/teacher/TeacherStudent';
+import TeacherNL2SQL from './pages/teacher/TeacherNL2SQL';
+import TeacherAlert from './pages/teacher/TeacherAlert';
 import StudentHome from './pages/StudentHome';
 import StudentView from './pages/StudentView';
 import StudentSuggestions from './pages/StudentSuggestions';
@@ -19,12 +25,21 @@ function App() {
       <RoleProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
-            {/* 管理员/教师视角 */}
-            <Route index element={<Home />} />
-            <Route path="overview" element={<Overview />} />
-            <Route path="student" element={<Student />} />
-            <Route path="nl2sql" element={<NL2SQL />} />
-            <Route path="alert" element={<Alert />} />
+            {/* 管理员视角 */}
+            <Route index element={<Navigate to="/admin" replace />} />
+            <Route path="admin" element={<AdminHome />} />
+            <Route path="admin/overview" element={<AdminOverview />} />
+            <Route path="admin/student" element={<AdminStudent />} />
+            <Route path="admin/nl2sql" element={<AdminNL2SQL />} />
+            <Route path="admin/alert" element={<AdminAlert />} />
+            <Route path="admin/history" element={<AdminChangeHistory />} />
+
+            {/* 教师视角 */}
+            <Route path="teacher" element={<TeacherHome />} />
+            <Route path="teacher/overview" element={<TeacherOverview />} />
+            <Route path="teacher/student" element={<TeacherStudent />} />
+            <Route path="teacher/nl2sql" element={<TeacherNL2SQL />} />
+            <Route path="teacher/alert" element={<TeacherAlert />} />
 
             {/* 学生视角 */}
             <Route path="student-view" element={<StudentHome />} />

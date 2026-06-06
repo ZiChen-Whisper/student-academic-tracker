@@ -6,6 +6,7 @@ import { getSuggestions, generateSuggestion, updateSuggestionFeedback } from '..
 
 export default function StudentSuggestions() {
   const { selectedStudentId, selectedStudentName } = useRole();
+  const operatorInfo = { operator_role: 'student', operator_name: selectedStudentName || '学生', operator_id: selectedStudentId || '' };
   const [suggestions, setSuggestions] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function StudentSuggestions() {
     if (!selectedStudentId) return;
     setGenerating(true);
     try {
-      await generateSuggestion(selectedStudentId);
+      await generateSuggestion(selectedStudentId, operatorInfo);
       const res = await getSuggestions(selectedStudentId);
       setSuggestions(res.data || []);
     } catch (err) {
@@ -35,7 +36,7 @@ export default function StudentSuggestions() {
 
   const handleFeedback = async (suggestionId, feedback) => {
     try {
-      await updateSuggestionFeedback(suggestionId, { feedback });
+      await updateSuggestionFeedback(suggestionId, { feedback, ...operatorInfo });
       setSuggestions((prev) =>
         prev.map((s) =>
           s.suggestion_id === suggestionId ? { ...s, student_feedback: feedback } : s

@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Sparkles, Clock, Database, AlertCircle, Copy, Check, Loader } from 'lucide-react';
-import LiquidCard from '../components/LiquidCard';
-import { nl2sqlQuery } from '../api';
+import LiquidCard from '../../components/LiquidCard';
+import { nl2sqlQuery } from '../../api';
+import { useRole } from '../../contexts/RoleContext';
 
 // 示例问题
 const EXAMPLE_QUESTIONS = [
@@ -57,7 +58,8 @@ function highlightSQL(sql) {
   return escaped;
 }
 
-export default function NL2SQL() {
+export default function AdminNL2SQL() {
+  const { selectedAdminId, selectedAdminName } = useRole();
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { sql, result, error, execution_time_ms }
@@ -73,7 +75,7 @@ export default function NL2SQL() {
     setResult(null);
 
     try {
-      const res = await nl2sqlQuery(queryText.trim());
+      const res = await nl2sqlQuery(queryText.trim(), { operator_role: 'admin', operator_name: selectedAdminName || '管理员', operator_id: selectedAdminId || '' });
       const data = res.data;
       setResult(data);
 
@@ -104,7 +106,7 @@ export default function NL2SQL() {
     } finally {
       setLoading(false);
     }
-  }, [question]);
+  }, [question, selectedAdminId, selectedAdminName]);
 
   // 点击示例问题
   const handleExampleClick = (q) => {
