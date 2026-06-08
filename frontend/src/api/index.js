@@ -41,4 +41,7 @@ export const getChangeHistory = (params) => api.get('/change-history/', { params
 // 管理员统计
 export const getAdminStats = () => api.get('/admin/stats');
 
+// 管理员全量排名
+export const getAdminRankings = (type) => api.get(`/admin/rankings/${type}`);
+
 export default api;
