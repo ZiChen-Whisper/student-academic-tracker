@@ -41,4 +41,15 @@ export const getChangeHistory = (params) => api.get('/change-history/', { params
 // 管理员统计
 export const getAdminStats = () => api.get('/admin/stats');
 
+// 管理员全量排名
+export const getAdminRankings = (type) => api.get(`/admin/rankings/${type}`);
+
+// 数据管理
+const adminHeaders = { headers: { 'X-Admin-Role': 'admin' } };
+export const getTableList = () => api.get('/admin/data/tables', adminHeaders);
+export const getTableData = (table, params) => api.get(`/admin/data/${table}`, { ...adminHeaders, params });
+export const createTableRow = (table, data) => api.post(`/admin/data/${table}`, data, adminHeaders);
+export const updateTableRow = (table, id, data) => api.put(`/admin/data/${table}/${id}`, data, adminHeaders);
+export const deleteTableRow = (table, id) => api.delete(`/admin/data/${table}/${id}`, adminHeaders);
+
 export default api;

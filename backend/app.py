@@ -9,6 +9,7 @@ from routes.nl2sql import nl2sql_bp
 from routes.teacher import teacher_bp
 from routes.change_history import change_history_bp
 from routes.admin import admin_bp
+from routes.data_management import data_management_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +28,7 @@ app.register_blueprint(nl2sql_bp, url_prefix='/api/nl2sql')
 app.register_blueprint(teacher_bp, url_prefix='/api/teachers')
 app.register_blueprint(change_history_bp, url_prefix='/api/change-history')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(data_management_bp, url_prefix='/api/admin/data')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, use_reloader=False)

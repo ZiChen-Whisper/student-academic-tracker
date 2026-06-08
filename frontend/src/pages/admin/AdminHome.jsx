@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Plus, Pencil, Trash2, User, ChevronRight, ChevronDown, Code, Users, School, GraduationCap, TrendingUp, CircleCheckBig, AlertTriangle, ShieldAlert, ShieldCheck, CalendarClock, Moon, BookOpen, HeartPulse, ClipboardCheck, Trophy, Medal, BarChart3 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Clock, Plus, Pencil, Trash2, User, ChevronRight, ChevronDown, Code, Users, School, GraduationCap, TrendingUp, CircleCheckBig, AlertTriangle, ShieldAlert, ShieldCheck, CalendarClock, Moon, BookOpen, HeartPulse, ClipboardCheck, Trophy, Medal, BarChart3, X, Loader2 } from 'lucide-react';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import LiquidCard from '../../components/LiquidCard';
+import LiquidSelect from '../../components/LiquidSelect';
 import { useRole } from '../../contexts/RoleContext';
-import { getOverview, getAlertStats, getClassStats, getChangeHistory, getTeachers, getAdminStats } from '../../api';
+import { getOverview, getAlertStats, getClassStats, getChangeHistory, getTeachers, getAdminStats, getAdminRankings } from '../../api';
 
 const SUBJECT_FULL_SCORE = {
   SUBJ_MATH: 20,
@@ -54,6 +56,10 @@ export default function AdminHome() {
   const [teacherCount, setTeacherCount] = useState(0);
   const [adminStats, setAdminStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [rankingType, setRankingType] = useState('class_ranking');
+  const [showFullRanking, setShowFullRanking] = useState(false);
+  const [fullRankingData, setFullRankingData] = useState([]);
+  const [fullRankingLoading, setFullRankingLoading] = useState(false);
 
   useEffect(() => {
     const p1 = getOverview({})
@@ -132,6 +138,100 @@ export default function AdminHome() {
     return ids.size;
   })();
 
+  // 排名类型配置
+  const RANKING_OPTIONS = [
+    { value: 'class_ranking', label: '班级排名', icon: School, accentColor: 'var(--accent)', isClass: true },
+    { value: 'top5_general', label: '综合成绩排名', icon: Trophy, accentColor: 'var(--success)', scoreUnit: '分' },
+    { value: 'top5_math', label: '数学成绩排名', icon: BarChart3, accentColor: 'var(--primary)', scoreUnit: '分' },
+    { value: 'top5_portuguese', label: '葡萄牙语成绩排名', icon: BookOpen, accentColor: 'var(--accent)', scoreUnit: '分' },
+    { value: 'top5_attendance', label: '出勤率排名', icon: CalendarClock, accentColor: 'var(--primary)', scoreUnit: '%' },
+    { value: 'top5_study_hours', label: '学习时长排名', icon: BookOpen, accentColor: 'var(--accent-light)', scoreUnit: 'h' },
+    { value: 'top5_improvement', label: '成绩进步排名', icon: TrendingUp, accentColor: 'var(--success)', scoreUnit: '分' },
+  ];
+
+  // 打开全量排名浮窗
+  const openFullRanking = async () => {
+    setShowFullRanking(true);
+    setFullRankingLoading(true);
+    try {
+      const res = await getAdminRankings(rankingType);
+      setFullRankingData(res.data?.data || []);
+    } catch (err) {
+      console.error('加载全量排名失败:', err);
+      setFullRankingData([]);
+    } finally {
+      setFullRankingLoading(false);
+    }
+  };
+
+  // 切换排名类型时关闭浮窗
+  const handleRankingTypeChange = (type) => {
+    setRankingType(type);
+    if (showFullRanking) {
+      setShowFullRanking(false);
+    }
+  };
+
+  // 渲染班级排名
+  const renderClassRanking = () => {
+    const data = adminStats?.class_ranking || [];
+    if (!data.length) return <div style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.4)', textAlign: 'center', padding: '0.75rem 0' }}>暂无数据</div>;
+    const maxScore = Math.max(...data.map(c => c.avg_score));
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        {data.map((cls, i) => {
+          const pct = (cls.avg_score / maxScore * 100).toFixed(0);
+          const medalColors = ['var(--accent)', 'rgba(11,101,101,0.5)', 'rgba(11,101,101,0.3)'];
+          return (
+            <div key={i} className="stat-fill-card ranking-item-compact"
+              onMouseEnter={(e) => { const bar = e.currentTarget.querySelector('.stat-fill-bar'); if (bar) bar.style.width = pct + '%'; }}
+              onMouseLeave={(e) => { const bar = e.currentTarget.querySelector('.stat-fill-bar'); if (bar) bar.style.width = '0'; }}
+            >
+              <div className="stat-fill-bar" style={{ background: i === 0 ? 'var(--accent)' : 'var(--primary)' }} />
+              <div className="stat-fill-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#1a2b2b', fontWeight: 500 }}>{cls.class_name}</span>
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.4)' }}>{cls.student_count}人</span>
+                </div>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: i === 0 ? 'var(--accent)' : 'var(--primary)' }}>{cls.avg_score}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // 渲染学生Top10排名
+  const renderStudentTop5 = (data, accentColor, scoreUnit) => {
+    if (!data?.length) return <div style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.4)', textAlign: 'center', padding: '0.75rem 0' }}>暂无数据</div>;
+    const medalColors = ['var(--accent)', 'rgba(11,101,101,0.5)', 'rgba(11,101,101,0.3)'];
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+        {data.map((stu, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.3125rem 0.5rem', borderRadius: '0.375rem', background: i === 0 ? 'rgba(201,147,58,0.06)' : 'transparent', transition: 'background 0.2s' }}
+            onMouseEnter={(e) => { if (i !== 0) e.currentTarget.style.background = 'rgba(11,101,101,0.03)'; }}
+            onMouseLeave={(e) => { if (i !== 0) e.currentTarget.style.background = 'transparent'; }}
+          >
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
+            <span style={{ fontSize: '0.75rem', color: '#1a2b2b', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</span>
+            <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.4)' }}>{stu.class_name}</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: i === 0 ? 'var(--accent)' : accentColor, minWidth: 36, textAlign: 'right' }}>{stu.score}{scoreUnit}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // 根据排名类型渲染内容
+  const renderRankingContent = () => {
+    const opt = RANKING_OPTIONS.find(o => o.value === rankingType);
+    if (!opt) return null;
+    if (opt.isClass) return renderClassRanking();
+    return renderStudentTop5(adminStats?.[rankingType], opt.accentColor, opt.scoreUnit || '');
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -155,10 +255,42 @@ export default function AdminHome() {
       />
 
       {/* 统计数据 */}
-      <LiquidCard title="统计数据" style={{ marginBottom: '1.25rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem', alignItems: 'stretch' }}>
-          {/* ── 左侧：指标卡片 ── */}
-          <div>
+      <LiquidCard style={{ marginBottom: '1.25rem', overflow: 'visible' }}>
+        {/* ── 悬浮排行榜（float 右侧，放在最前确保从内容区顶部开始浮动） ── */}
+        <div className="ranking-float-panel">
+          {/* 标题行 + 下拉选择 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Trophy size={13} style={{ color: 'var(--primary)' }} />
+              排行榜
+            </div>
+            <LiquidSelect
+              value={rankingType}
+              onChange={handleRankingTypeChange}
+              options={RANKING_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+              style={{ width: 'auto' }}
+              triggerStyle={{ minWidth: 'unset', padding: '0.375rem 0.625rem', fontSize: '0.75rem' }}
+            />
+          </div>
+          {/* 排名内容 */}
+          <div className="liquid-scroll ranking-float-content" style={{ overflowY: 'auto', paddingRight: '0.25rem' }}>
+            {renderRankingContent()}
+          </div>
+          {/* 查看全部按钮 */}
+          <button
+            className="ranking-view-all-btn"
+            onClick={openFullRanking}
+          >
+            查看全部排名
+            <ChevronRight size={12} />
+          </button>
+        </div>
+
+        {/* 卡片标题（手动渲染，在 float 之后，内容会环绕浮块） */}
+        <h2 style={{ margin: 0, marginBottom: '0.875rem' }}>统计数据</h2>
+
+        {/* 指标卡片 */}
+        <div>
             {/* 板块1: 基础概况 */}
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
               <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--primary)' }} />
@@ -187,7 +319,7 @@ export default function AdminHome() {
 
             {/* 板块2: 成绩指标 */}
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--success)' }} />
+              <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--primary)' }} />
               成绩指标
             </div>
             <div className="stat-grid" style={{ marginBottom: '0.75rem' }}>
@@ -233,7 +365,7 @@ export default function AdminHome() {
             {adminStats?.behavior && (
               <>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--accent)' }} />
+                  <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--primary)' }} />
                   学习行为
                 </div>
                 <div className="stat-grid" style={{ marginBottom: '1rem' }}>
@@ -260,7 +392,7 @@ export default function AdminHome() {
 
             {/* 板块4: 风险预警 */}
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--danger)' }} />
+              <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--primary)' }} />
               风险预警
             </div>
             <div className="stat-grid" style={{ marginBottom: '0.75rem' }}>
@@ -313,70 +445,88 @@ export default function AdminHome() {
               </div>
             )}
           </div>
-
-          {/* ── 右侧：排名数据 ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '100%', overflow: 'hidden' }}>
-            {/* 班级排名 */}
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--accent)' }} />
-              班级排名
-            </div>
-            {adminStats?.class_ranking?.length > 0 ? (
-              <div className="liquid-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, paddingRight: '0.25rem' }}>
-                {adminStats.class_ranking.map((cls, i) => {
-                  const maxScore = Math.max(...adminStats.class_ranking.map(c => c.avg_score));
-                  const pct = (cls.avg_score / maxScore * 100).toFixed(0);
-                  const medalColors = ['var(--accent)', 'rgba(11,101,101,0.5)', 'rgba(11,101,101,0.3)'];
-                  return (
-                    <div key={i} className="stat-fill-card"
-                      onMouseEnter={(e) => { const bar = e.currentTarget.querySelector('.stat-fill-bar'); if (bar) bar.style.width = pct + '%'; }}
-                      onMouseLeave={(e) => { const bar = e.currentTarget.querySelector('.stat-fill-bar'); if (bar) bar.style.width = '0'; }}
-                    >
-                      <div className="stat-fill-bar" style={{ background: i === 0 ? 'var(--accent)' : 'var(--primary)' }} />
-                      <div className="stat-fill-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ width: 20, height: 20, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
-                          <span style={{ fontSize: '0.8125rem', color: '#1a2b2b', fontWeight: 500 }}>{cls.class_name}</span>
-                          <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.4)' }}>{cls.student_count}人</span>
-                        </div>
-                        <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: i === 0 ? 'var(--accent)' : 'var(--primary)' }}>{cls.avg_score}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div style={{ fontSize: '0.8125rem', color: 'rgba(11,101,101,0.4)', textAlign: 'center', padding: '1rem 0', marginBottom: '1.25rem' }}>暂无数据</div>
-            )}
-
-            {/* 成绩 Top5 */}
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--success)' }} />
-              综合成绩 Top 5
-            </div>
-            {adminStats?.top5_general?.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                {adminStats.top5_general.map((stu, i) => {
-                  const medalColors = ['var(--accent)', 'rgba(11,101,101,0.5)', 'rgba(11,101,101,0.3)'];
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.625rem', borderRadius: '0.5rem', background: i === 0 ? 'rgba(201,147,58,0.06)' : 'transparent', transition: 'background 0.2s' }}
-                      onMouseEnter={(e) => { if (i !== 0) e.currentTarget.style.background = 'rgba(11,101,101,0.03)'; }}
-                      onMouseLeave={(e) => { if (i !== 0) e.currentTarget.style.background = 'transparent'; }}
-                    >
-                      <span style={{ width: 20, height: 20, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
-                      <span style={{ fontSize: '0.8125rem', color: '#1a2b2b', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</span>
-                      <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.4)' }}>{stu.class_name}</span>
-                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: i === 0 ? 'var(--accent)' : 'var(--primary)', minWidth: 32, textAlign: 'right' }}>{stu.score}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div style={{ fontSize: '0.8125rem', color: 'rgba(11,101,101,0.4)', textAlign: 'center', padding: '1rem 0' }}>暂无数据</div>
-            )}
-          </div>
-        </div>
       </LiquidCard>
+
+      {/* 全量排名浮窗 — Portal 渲染到 body */}
+      {showFullRanking && createPortal(
+        <div className="ranking-modal-overlay" onClick={() => setShowFullRanking(false)}>
+          <div className="ranking-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Trophy size={16} style={{ color: 'var(--accent)' }} />
+                <h2 style={{ margin: 0, fontSize: '1rem' }}>
+                  {RANKING_OPTIONS.find(o => o.value === rankingType)?.label} - 全部排名
+                </h2>
+              </div>
+              <button
+                className="liquid-btn liquid-btn-sm"
+                onClick={() => setShowFullRanking(false)}
+                style={{ padding: '0.25rem', minWidth: 28, minHeight: 28 }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="liquid-scroll" style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 80px)', paddingRight: '0.25rem' }}>
+              {fullRankingLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem 0' }}>
+                  <Loader2 size={20} className="spin" style={{ color: 'var(--primary)', marginRight: '0.5rem' }} />
+                  <span style={{ fontSize: '0.8125rem', color: 'rgba(11,101,101,0.5)' }}>加载中...</span>
+                </div>
+              ) : fullRankingData.length > 0 ? (
+                (() => {
+                  const opt = RANKING_OPTIONS.find(o => o.value === rankingType);
+                  if (opt?.isClass) {
+                    const maxScore = Math.max(...fullRankingData.map(c => c.avg_score));
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {fullRankingData.map((cls, i) => {
+                          const pct = (cls.avg_score / maxScore * 100).toFixed(0);
+                          const medalColors = ['var(--accent)', 'rgba(11,101,101,0.5)', 'rgba(11,101,101,0.3)'];
+                          return (
+                            <div key={i} className="stat-fill-card"
+                              onMouseEnter={(e) => { const bar = e.currentTarget.querySelector('.stat-fill-bar'); if (bar) bar.style.width = pct + '%'; }}
+                              onMouseLeave={(e) => { const bar = e.currentTarget.querySelector('.stat-fill-bar'); if (bar) bar.style.width = '0'; }}
+                            >
+                              <div className="stat-fill-bar" style={{ background: i === 0 ? 'var(--accent)' : 'var(--primary)' }} />
+                              <div className="stat-fill-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span style={{ width: 20, height: 20, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
+                                  <span style={{ fontSize: '0.8125rem', color: '#1a2b2b', fontWeight: 500 }}>{cls.class_name}</span>
+                                  <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.4)' }}>{cls.student_count}人</span>
+                                </div>
+                                <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: i === 0 ? 'var(--accent)' : 'var(--primary)' }}>{cls.avg_score}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                  const medalColors = ['var(--accent)', 'rgba(11,101,101,0.5)', 'rgba(11,101,101,0.3)'];
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                      {fullRankingData.map((stu, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.625rem', borderRadius: '0.5rem', background: i === 0 ? 'rgba(201,147,58,0.06)' : 'transparent', transition: 'background 0.2s' }}
+                          onMouseEnter={(e) => { if (i !== 0) e.currentTarget.style.background = 'rgba(11,101,101,0.03)'; }}
+                          onMouseLeave={(e) => { if (i !== 0) e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <span style={{ width: 20, height: 20, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
+                          <span style={{ fontSize: '0.8125rem', color: '#1a2b2b', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</span>
+                          <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.4)' }}>{stu.class_name}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: i === 0 ? 'var(--accent)' : opt?.accentColor || 'var(--primary)', minWidth: 40, textAlign: 'right' }}>{stu.score}{opt?.scoreUnit || ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              ) : (
+                <div style={{ fontSize: '0.8125rem', color: 'rgba(11,101,101,0.4)', textAlign: 'center', padding: '1rem 0' }}>暂无数据</div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* 变更历史（最多5项） */}
       <LiquidCard

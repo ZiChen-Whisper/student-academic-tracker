@@ -8,7 +8,7 @@ import { ChevronDown } from 'lucide-react';
  * 使用 Portal 渲染到 body，确保 backdrop-filter 正常工作
  * 自动检测可用空间，向上或向下展开
  */
-export default function LiquidSelect({ value, onChange, options, placeholder, style, className = '' }) {
+export default function LiquidSelect({ value, onChange, options, placeholder, style, className = '', triggerStyle }) {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false); // 面板是否可见（延迟显示，避免 backdrop-filter 闪烁）
   const [dropUp, setDropUp] = useState(false);
@@ -109,6 +109,7 @@ export default function LiquidSelect({ value, onChange, options, placeholder, st
         aria-expanded={open}
         aria-haspopup="listbox"
         className={`liquid-select-trigger ${open ? 'liquid-select-trigger-open' : ''}`}
+        style={triggerStyle}
         onClick={() => setOpen((prev) => !prev)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {

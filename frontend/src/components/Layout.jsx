@@ -16,10 +16,7 @@ const ROLE_CONFIG = {
 const NAV_ITEMS = {
   admin: [
     { to: '/admin', label: '主页', end: true },
-    { to: '/admin/overview', label: '学情概览' },
-    { to: '/admin/student', label: '学生详情' },
-    { to: '/admin/nl2sql', label: 'AI 查询' },
-    { to: '/admin/alert', label: '风险预警' },
+    { to: '/admin/data', label: '数据管理' },
     { to: '/admin/history', label: '变更历史' },
   ],
   teacher: [

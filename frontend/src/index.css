@@ -543,6 +543,140 @@ a:hover {
   line-height: 1.4;
 }
 
+/* 排名浮窗 */
+.ranking-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ranking-modal-fade-in 0.2s ease;
+}
+
+.ranking-modal {
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 0.5px solid rgba(11, 101, 101, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(11, 101, 101, 0.08), 0 12px 40px rgba(11, 101, 101, 0.06);
+  padding: 1.25rem;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: ranking-modal-scale-in 0.2s ease;
+}
+
+.ranking-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 0.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  pointer-events: none;
+}
+
+@keyframes ranking-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ranking-modal-scale-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 悬浮排行榜面板 */
+.ranking-float-panel {
+  float: right;
+  width: 260px;
+  margin: 0 0 1rem 1.25rem;
+  background: rgba(255,255,255,0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 0.5px solid rgba(11,101,101,0.12);
+  border-radius: 0.875rem;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(11,101,101,0.06), 0 8px 24px rgba(11,101,101,0.05), 0 0 0 0.5px rgba(11,101,101,0.04);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 悬浮排行榜顶部高光线 */
+.ranking-float-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 0.5px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 排行榜内容区域 - 自适应高度，超出加滚动条 */
+.ranking-float-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+}
+
+/* 排行榜紧凑项（班级排名卡片） */
+.ranking-item-compact {
+  padding: 0.4375rem 0.625rem !important;
+  min-height: 36px !important;
+}
+
+/* 查看全部排名按钮 */
+.ranking-view-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.625rem;
+  padding: 0.375rem 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: rgba(11,101,101,0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  width: 100%;
+}
+
+.ranking-view-all-btn:hover {
+  color: var(--primary);
+}
+
+.ranking-view-all-btn:active {
+  color: var(--primary-dark);
+}
+
+/* 加载旋转动画 */
+.spin {
+  animation: spin-rotate 0.8s linear infinite;
+}
+
+@keyframes spin-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ----------------------------------------------------------
    §5.4 按钮 .liquid-btn
    ---------------------------------------------------------- */
