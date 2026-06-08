@@ -38,4 +38,7 @@ export const updateSuggestionFeedback = (id, data) => api.put(`/suggestions/${id
 // 变更历史
 export const getChangeHistory = (params) => api.get('/change-history/', { params });
 
+// 管理员统计
+export const getAdminStats = () => api.get('/admin/stats');
+
 export default api;
