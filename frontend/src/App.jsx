@@ -2,11 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { RoleProvider } from './contexts/RoleContext';
 import Layout from './components/Layout';
 import AdminHome from './pages/admin/AdminHome';
-import AdminOverview from './pages/admin/AdminOverview';
-import AdminStudent from './pages/admin/AdminStudent';
-import AdminNL2SQL from './pages/admin/AdminNL2SQL';
-import AdminAlert from './pages/admin/AdminAlert';
+import AdminDataManagement, { ClassSubjectPage, CoursePage } from './pages/admin/AdminDataManagement';
 import AdminChangeHistory from './pages/admin/AdminChangeHistory';
+import TableViewer from './components/TableViewer';
 import TeacherHome from './pages/teacher/TeacherHome';
 import TeacherOverview from './pages/teacher/TeacherOverview';
 import TeacherStudent from './pages/teacher/TeacherStudent';
@@ -28,10 +26,23 @@ function App() {
             {/* 管理员视角 */}
             <Route index element={<Navigate to="/admin" replace />} />
             <Route path="admin" element={<AdminHome />} />
-            <Route path="admin/overview" element={<AdminOverview />} />
-            <Route path="admin/student" element={<AdminStudent />} />
-            <Route path="admin/nl2sql" element={<AdminNL2SQL />} />
-            <Route path="admin/alert" element={<AdminAlert />} />
+            <Route path="admin/data" element={<AdminDataManagement />}>
+              <Route index element={<Navigate to="student" replace />} />
+              <Route path="student" element={<TableViewer tableName="student" />} />
+              <Route path="teacher" element={<TableViewer tableName="teacher" />} />
+              <Route path="class-subject" element={<ClassSubjectPage />} />
+              <Route path="class-subject/class" element={<TableViewer tableName="class" />} />
+              <Route path="class-subject/subject" element={<TableViewer tableName="subject" />} />
+              <Route path="course" element={<CoursePage />} />
+              <Route path="course/course-schedule" element={<TableViewer tableName="course_schedule" />} />
+              <Route path="course/student-subject" element={<TableViewer tableName="student_subject" />} />
+              <Route path="score" element={<TableViewer tableName="exam_score" />} />
+              <Route path="behavior" element={<TableViewer tableName="learning_behavior" />} />
+              <Route path="family" element={<TableViewer tableName="family_background" />} />
+              <Route path="alert" element={<TableViewer tableName="risk_alert" />} />
+              <Route path="suggestion" element={<TableViewer tableName="learning_suggestion" />} />
+              <Route path="log" element={<TableViewer tableName="nl2sql_log" readonly />} />
+            </Route>
             <Route path="admin/history" element={<AdminChangeHistory />} />
 
             {/* 教师视角 */}
