@@ -9,6 +9,7 @@ import TeacherHome from './pages/teacher/TeacherHome';
 import TeacherOverview from './pages/teacher/TeacherOverview';
 import TeacherStudent from './pages/teacher/TeacherStudent';
 import TeacherAlert from './pages/teacher/TeacherAlert';
+import TeacherScore from './pages/teacher/TeacherScore';
 import StudentHome from './pages/StudentHome';
 import StudentView from './pages/StudentView';
 import StudentSuggestions from './pages/StudentSuggestions';
@@ -49,6 +50,7 @@ function App() {
             <Route path="teacher/overview" element={<TeacherOverview />} />
             <Route path="teacher/student" element={<TeacherStudent />} />
             <Route path="teacher/alert" element={<TeacherAlert />} />
+            <Route path="teacher/score" element={<TeacherScore />} />
 
             {/* 学生视角 */}
             <Route path="student-view" element={<StudentHome />} />

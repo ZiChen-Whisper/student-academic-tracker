@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Database, Clock } from 'lucide-react';
+import { GraduationCap, User, Users, Database, Clock, BarChart, ShieldAlert } from 'lucide-react';
 
 /* 管理员专属面性盾牌图标 */
 function AdminShieldIcon({ size = 28, style }) {
@@ -20,6 +20,13 @@ function AdminShieldIcon({ size = 28, style }) {
 const ADMIN_SHORTCUTS = [
   { label: '数据管理', path: '/admin/data/student', icon: Database },
   { label: '变更历史', path: '/admin/history', icon: Clock },
+];
+
+/* 教师快捷入口配置 */
+const TEACHER_SHORTCUTS = [
+  { label: '学情概览', path: '/teacher/overview', icon: BarChart },
+  { label: '风险预警', path: '/teacher/alert', icon: ShieldAlert },
+  { label: '成绩管理', path: '/teacher/score', icon: Database },
 ];
 
 const ROLE_CONFIG = {
@@ -92,6 +99,22 @@ export default function WelcomeBanner({ role, title, subtitle, stats, decoration
       {decoration === 'admin' && (
         <div className="welcome-banner-shortcuts">
           {ADMIN_SHORTCUTS.map((item) => (
+            <button
+              key={item.path}
+              className="welcome-banner-shortcut-btn"
+              onClick={() => navigate(item.path)}
+            >
+              <item.icon size={13} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 教师快捷入口 */}
+      {decoration === 'teacher' && (
+        <div className="welcome-banner-shortcuts">
+          {TEACHER_SHORTCUTS.map((item) => (
             <button
               key={item.path}
               className="welcome-banner-shortcut-btn"

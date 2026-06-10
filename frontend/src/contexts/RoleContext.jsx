@@ -1,16 +1,46 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const RoleContext = createContext(null);
 
+// localStorage 辅助函数
+function loadFromStorage(key, fallback) {
+  try {
+    const val = localStorage.getItem(key);
+    return val !== null ? JSON.parse(val) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export function RoleProvider({ children }) {
-  const [role, setRole] = useState('admin'); // 'admin' | 'teacher' | 'student' | 'parent'
-  const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [selectedStudentName, setSelectedStudentName] = useState('');
-  const [selectedTeacherId, setSelectedTeacherId] = useState('');
-  const [selectedTeacherName, setSelectedTeacherName] = useState('');
-  const [selectedAdminId, setSelectedAdminId] = useState('');
-  const [selectedAdminName, setSelectedAdminName] = useState('');
-  const [selectedTeacherClassId, setSelectedTeacherClassId] = useState('');
+  const [role, setRole] = useState(() => loadFromStorage('role', 'admin'));
+  const [selectedStudentId, setSelectedStudentId] = useState(() => loadFromStorage('selectedStudentId', ''));
+  const [selectedStudentName, setSelectedStudentName] = useState(() => loadFromStorage('selectedStudentName', ''));
+  const [selectedTeacherId, setSelectedTeacherId] = useState(() => loadFromStorage('selectedTeacherId', ''));
+  const [selectedTeacherName, setSelectedTeacherName] = useState(() => loadFromStorage('selectedTeacherName', ''));
+  const [selectedAdminId, setSelectedAdminId] = useState(() => loadFromStorage('selectedAdminId', ''));
+  const [selectedAdminName, setSelectedAdminName] = useState(() => loadFromStorage('selectedAdminName', ''));
+  const [selectedTeacherClassId, setSelectedTeacherClassId] = useState(() => loadFromStorage('selectedTeacherClassId', ''));
+  const [teacherClasses, setTeacherClasses] = useState(() => loadFromStorage('teacherClasses', []));
+
+  // 持久化到 localStorage
+  useEffect(() => { saveToStorage('role', role); }, [role]);
+  useEffect(() => { saveToStorage('selectedStudentId', selectedStudentId); }, [selectedStudentId]);
+  useEffect(() => { saveToStorage('selectedStudentName', selectedStudentName); }, [selectedStudentName]);
+  useEffect(() => { saveToStorage('selectedTeacherId', selectedTeacherId); }, [selectedTeacherId]);
+  useEffect(() => { saveToStorage('selectedTeacherName', selectedTeacherName); }, [selectedTeacherName]);
+  useEffect(() => { saveToStorage('selectedAdminId', selectedAdminId); }, [selectedAdminId]);
+  useEffect(() => { saveToStorage('selectedAdminName', selectedAdminName); }, [selectedAdminName]);
+  useEffect(() => { saveToStorage('selectedTeacherClassId', selectedTeacherClassId); }, [selectedTeacherClassId]);
+  useEffect(() => { saveToStorage('teacherClasses', teacherClasses); }, [teacherClasses]);
 
   const switchRole = useCallback((newRole) => {
     setRole(newRole);
@@ -35,6 +65,7 @@ export function RoleProvider({ children }) {
     setSelectedTeacherId('');
     setSelectedTeacherName('');
     setSelectedTeacherClassId('');
+    setTeacherClasses([]);
   }, []);
 
   const selectAdmin = useCallback((id, name) => {
@@ -65,6 +96,8 @@ export function RoleProvider({ children }) {
       clearAdmin,
       selectedTeacherClassId,
       setSelectedTeacherClassId,
+      teacherClasses,
+      setTeacherClasses,
     }}>
       {children}
     </RoleContext.Provider>

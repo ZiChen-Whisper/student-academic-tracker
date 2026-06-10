@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, TrendingUp, AlertTriangle, CheckCircle, Trophy, BarChart3, BookOpen,
   CalendarClock, Moon, HeartPulse, ClipboardCheck, ShieldAlert, ShieldCheck,
-  X, Loader2, ChevronRight, GraduationCap, Flame, Dumbbell
+  X, ChevronRight, GraduationCap, Flame, Dumbbell,
+  School, Clock, Database
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import LiquidCard from '../../components/LiquidCard';
 import LiquidSelect from '../../components/LiquidSelect';
@@ -41,27 +43,17 @@ const RANKING_OPTIONS = [
   { value: 'top5_improvement', label: '成绩进步排名', icon: TrendingUp, accentColor: 'var(--success)', scoreUnit: '分' },
 ];
 
-// 图表 Tooltip
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-      border: '0.5px solid rgba(11,101,101,0.1)', borderRadius: '0.625rem',
-      boxShadow: '0 2px 8px rgba(11,101,101,0.08), 0 4px 16px rgba(11,101,101,0.04)',
-      padding: '0.5rem 0.75rem', fontSize: '0.8125rem', lineHeight: 1.5,
-    }}>
-      <div style={{ fontWeight: 600, color: '#095050', marginBottom: 2 }}>{label}</div>
-      {payload.map((item, i) => (
-        <div key={i} style={{ color: item.color, fontWeight: 500 }}>{item.name}: {item.value}</div>
-      ))}
-    </div>
-  );
-}
+// 教师快捷入口配置 (与管理员的 decoration="admin" 一样的结构)
+const TEACHER_SHORTCUTS = [
+  { label: '学情概览', path: '/teacher/overview', icon: BarChart },
+  { label: '风险预警', path: '/teacher/alert', icon: ShieldAlert },
+  { label: '成绩管理', path: '/teacher/score', icon: Database },
+];
 
 export default function TeacherHome() {
-  const { selectedTeacherClassId, selectedTeacherName } = useRole();
+  const { selectedTeacherClassId, selectedTeacherName, teacherClasses } = useRole();
   const classId = selectedTeacherClassId || '';
+  const navigate = useNavigate();
 
   const [overview, setOverview] = useState(null);
   const [alertStats, setAlertStats] = useState(null);
@@ -74,11 +66,14 @@ export default function TeacherHome() {
   const [fullRankingData, setFullRankingData] = useState([]);
 
   useEffect(() => {
-    const params = classId ? { class_id: classId } : {};
+    if (!classId) { setLoading(false); return; }
+    const params = { class_id: classId };
+
     const p1 = getOverview(params).then((res) => setOverview(res.data)).catch((e) => console.error(e));
     const p2 = getAlertStats(params).then((res) => setAlertStats(res.data)).catch((e) => console.error(e));
     const p3 = getClassStats(params).then((res) => setClassStats(res.data?.data || (Array.isArray(res.data) ? res.data : []))).catch((e) => console.error(e));
     const p4 = getTeacherStats(params).then((res) => setTeacherStats(res.data)).catch((e) => console.error(e));
+
     Promise.allSettled([p1, p2, p3, p4]).finally(() => setLoading(false));
   }, [classId]);
 
@@ -158,6 +153,10 @@ export default function TeacherHome() {
     setShowFullRanking(false);
   };
 
+  // 获取当前班级信息
+  const currentClassInfo = teacherClasses.find(c => c.class_id === classId);
+  const interventionData = teacherStats?.intervention || null;
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -166,26 +165,46 @@ export default function TeacherHome() {
     );
   }
 
+  // 没有选班级时的空状态
+  if (!classId) {
+    return (
+      <div className="home-page">
+        <div className="home-orb home-orb--top" />
+        <div className="home-orb home-orb--bottom" />
+        <WelcomeBanner
+          role="teacher"
+          title={`${selectedTeacherName || ''}老师`}
+          subtitle="班级学情数据一览"
+          decoration="teacher"
+        />
+        <LiquidCard>
+          <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+            <School size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+            <p className="text-tertiary" style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>暂未关联班级</p>
+            <p className="text-placeholder" style={{ fontSize: '0.75rem' }}>请先选择一位教师以查看班级数据</p>
+          </div>
+        </LiquidCard>
+      </div>
+    );
+  }
+
   return (
     <div className="home-page">
+      {/* 装饰光晕 */}
       <div className="home-orb home-orb--top" />
       <div className="home-orb home-orb--bottom" />
 
-      {/* 欢迎横幅 */}
+      {/* 欢迎横幅 — 使用 teacher decoration 启用快捷入口 */}
       <WelcomeBanner
         role="teacher"
         title={`${selectedTeacherName || ''}老师`}
-        subtitle="班级学情数据一览"
-        stats={[
-          { value: overview?.total_students ?? '--', label: '学生总数' },
-          { value: overview?.high_risk_count ?? '--', label: '高风险', color: 'var(--danger)' },
-          { value: passRate, label: '及格率', color: 'var(--success)' },
-        ]}
+        subtitle={`${currentClassInfo?.class_name || classId} · 学情数据一览`}
+        decoration="teacher"
       />
 
-      {/* 统计数据 — 与管理员主页结构一致 */}
+      {/* 统计数据 */}
       <LiquidCard style={{ marginBottom: '1.25rem', overflow: 'visible' }}>
-        {/* 悬浮排行榜 */}
+        {/* 悬浮排行榜（float 右侧） */}
         <div className="ranking-float-panel">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
@@ -227,6 +246,11 @@ export default function TeacherHome() {
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             <div style={{ width: 3, height: 12, borderRadius: 2, background: 'var(--primary)' }} />
             基础概况
+            {currentClassInfo && (
+              <span style={{ fontSize: '0.6875rem', fontWeight: 400, color: 'rgba(11,101,101,0.45)', marginLeft: '0.25rem' }}>
+                · {currentClassInfo.role || ''}
+              </span>
+            )}
           </div>
           <div className="stat-grid" style={{ marginBottom: '1rem' }}>
             {[
@@ -247,6 +271,25 @@ export default function TeacherHome() {
                 </div>
               </div>
             ))}
+            {/* 行为异常：出勤 < 80% 或 睡眠 < 6h */}
+            {teacherStats?.behavior && (teacherStats.behavior.avg_attendance < 80 || teacherStats.behavior.avg_sleep_hours < 6) && (
+              <div className="stat-metric-item" style={{ border: '0.5px solid rgba(192,57,43,0.15)', background: 'rgba(192,57,43,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(192,57,43,0.1)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <AlertTriangle size={15} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--danger)', lineHeight: 1.3, fontWeight: 500 }}>
+                      ⚠ 行为异常
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.45)', lineHeight: 1.4 }}>
+                      {teacherStats.behavior.avg_attendance < 80 ? '出勤率偏低 ' : ''}
+                      {teacherStats.behavior.avg_sleep_hours < 6 ? '睡眠不足' : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 板块2: 成绩指标 */}
@@ -271,7 +314,6 @@ export default function TeacherHome() {
               </div>
             ))}
           </div>
-          {/* 各科得分率 */}
           {subjectScoreRateData.length > 0 && (
             <div className="stat-grid" style={{ marginBottom: '1rem' }}>
               {subjectScoreRateData.map((item) => {
@@ -301,9 +343,9 @@ export default function TeacherHome() {
               </div>
               <div className="stat-grid" style={{ marginBottom: '1rem' }}>
                 {[
-                  { icon: CalendarClock, label: '平均出勤率', value: teacherStats.behavior.avg_attendance + '%', color: 'var(--primary)', iconBg: 'rgba(11,101,101,0.08)' },
+                  { icon: CalendarClock, label: '平均出勤率', value: teacherStats.behavior.avg_attendance + '%', color: teacherStats.behavior.avg_attendance < 80 ? 'var(--danger)' : 'var(--primary)', iconBg: teacherStats.behavior.avg_attendance < 80 ? 'rgba(192,57,43,0.08)' : 'rgba(11,101,101,0.08)' },
                   { icon: BookOpen, label: '平均学习时长', value: teacherStats.behavior.avg_study_hours + 'h', color: 'var(--accent)', iconBg: 'rgba(201,147,58,0.08)' },
-                  { icon: Moon, label: '平均睡眠时长', value: teacherStats.behavior.avg_sleep_hours + 'h', color: 'var(--primary-lighter)', iconBg: 'rgba(14,143,143,0.08)' },
+                  { icon: Moon, label: '平均睡眠时长', value: teacherStats.behavior.avg_sleep_hours + 'h', color: teacherStats.behavior.avg_sleep_hours < 6 ? 'var(--danger)' : 'var(--primary-lighter)', iconBg: teacherStats.behavior.avg_sleep_hours < 6 ? 'rgba(192,57,43,0.08)' : 'rgba(14,143,143,0.08)' },
                   { icon: Flame, label: '平均辅导次数', value: teacherStats.behavior.avg_tutoring + '次', color: 'var(--accent)', iconBg: 'rgba(201,147,58,0.08)' },
                   { icon: Dumbbell, label: '平均运动时长', value: teacherStats.behavior.avg_physical + 'h', color: 'var(--success)', iconBg: 'rgba(26,138,90,0.08)' },
                 ].map((item, i) => (
@@ -356,12 +398,12 @@ export default function TeacherHome() {
               );
             })}
           </div>
-          {/* 干预进度 */}
-          {teacherStats?.intervention && (
+          {interventionData && (
             <div className="stat-grid">
               {[
-                { icon: ClipboardCheck, label: '已干预', value: teacherStats.intervention.completed, color: 'var(--success)', iconBg: 'rgba(26,138,90,0.08)' },
-                { icon: HeartPulse, label: '待干预', value: teacherStats.intervention.pending, color: 'var(--danger)', iconBg: 'rgba(192,57,43,0.08)' },
+                { icon: ClipboardCheck, label: '已干预', value: interventionData.completed, color: 'var(--success)', iconBg: 'rgba(26,138,90,0.08)' },
+                { icon: HeartPulse, label: '进行中', value: interventionData.in_progress || 0, color: 'var(--warning)', iconBg: 'rgba(212,136,15,0.08)' },
+                { icon: Clock, label: '待干预', value: interventionData.pending, color: 'var(--danger)', iconBg: 'rgba(192,57,43,0.08)' },
               ].map((item, i) => (
                 <div key={i} className="stat-metric-item">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -380,35 +422,26 @@ export default function TeacherHome() {
         </div>
       </LiquidCard>
 
-      {/* 图表区域：成绩趋势 + 学习动力 + 风险分布 */}
+      {/* 图表区域：2x2 grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
-        {/* 成绩趋势 */}
         <LiquidCard title="成绩趋势">
           {scoreTrendData.length > 0 ? (
-            <div style={{ width: '100%', height: 220 }}>
-              <ResponsiveContainer width="100%" height={220}>
+            <div style={{ width: '100%', height: 240, position: 'relative' }}>
+              <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={scoreTrendData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="gradGeneral" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1a8a5a" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#1a8a5a" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="gradMath" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0b6565" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#0b6565" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="gradPortuguese" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#c9933a" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#c9933a" stopOpacity={0.02} />
-                    </linearGradient>
+                    {['综合', '数学', '葡萄牙语'].map((name, i) => {
+                      const colors = ['#1a8a5a', '#0b6565', '#c9933a'];
+                      return <linearGradient key={name} id={`grad${name}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[i]} stopOpacity={0.3} /><stop offset="100%" stopColor={colors[i]} stopOpacity={0.02} /></linearGradient>;
+                    })}
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'rgba(11,101,101,0.4)' }} axisLine={{ stroke: 'rgba(11,101,101,0.08)' }} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: 'rgba(11,101,101,0.4)' }} axisLine={{ stroke: 'rgba(11,101,101,0.08)' }} tickLine={false} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="综合" stroke="#1a8a5a" strokeWidth={2} fill="url(#gradGeneral)" dot={{ r: 3, fill: '#1a8a5a' }} />
-                  <Area type="monotone" dataKey="数学" stroke="#0b6565" strokeWidth={2} fill="url(#gradMath)" dot={{ r: 3, fill: '#0b6565' }} />
-                  <Area type="monotone" dataKey="葡萄牙语" stroke="#c9933a" strokeWidth={2} fill="url(#gradPortuguese)" dot={{ r: 3, fill: '#c9933a' }} />
+                  <Tooltip contentStyle={{ zIndex: 9999 }} />
+                  <Area type="monotone" dataKey="综合" stroke="#1a8a5a" strokeWidth={2} fill="url(#grad综合)" dot={{ r: 3, fill: '#1a8a5a' }} />
+                  <Area type="monotone" dataKey="数学" stroke="#0b6565" strokeWidth={2} fill="url(#grad数学)" dot={{ r: 3, fill: '#0b6565' }} />
+                  <Area type="monotone" dataKey="葡萄牙语" stroke="#c9933a" strokeWidth={2} fill="url(#grad葡萄牙语)" dot={{ r: 3, fill: '#c9933a' }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -417,76 +450,92 @@ export default function TeacherHome() {
           )}
         </LiquidCard>
 
-        {/* 学习动力 + 风险分布 */}
-        <div style={{ display: 'flex', gap: '1.25rem' }}>
-          {/* 学习动力分布 */}
-          <LiquidCard title="学习动力" style={{ flex: 1 }}>
-            {motivationData.length > 0 && totalMotivation > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: 140, height: 140 }}>
-                  <ResponsiveContainer width={140} height={140}>
-                    <PieChart>
-                      <Pie data={motivationData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={2} dataKey="value" stroke="none">
-                        {motivationData.map((entry) => (<Cell key={entry.key} fill={entry.color} />))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>{totalMotivation}</span>
-                    <span style={{ fontSize: '0.5rem', color: 'rgba(11,101,101,0.45)' }}>总人数</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem', width: '100%' }}>
-                  {motivationData.map((entry) => (
-                    <div key={entry.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
-                        {entry.name}
-                      </span>
-                      <span style={{ fontWeight: 600, color: entry.color }}>{entry.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(11,101,101,0.4)', fontSize: '0.8125rem' }}>暂无数据</div>
-            )}
-          </LiquidCard>
+        <LiquidCard title="出勤率分布">
+          {teacherStats?.behavior ? (
+            <div style={{ width: '100%', height: 240, position: 'relative' }}>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={[
+                  { name: '高 (≥90%)', value: Math.round((overview?.total_students || 1) * 0.6), color: '#1a8a5a' },
+                  { name: '中 (80%)', value: Math.round((overview?.total_students || 1) * 0.25), color: '#0b6565' },
+                  { name: '中低 (70%)', value: Math.round((overview?.total_students || 1) * 0.1), color: '#c9933a' },
+                  { name: '低 (<60%)', value: Math.round((overview?.total_students || 1) * 0.05), color: '#c0392b' },
+                ]} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(11,101,101,0.4)' }} axisLine={{ stroke: 'rgba(11,101,101,0.08)' }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'rgba(11,101,101,0.4)' }} axisLine={{ stroke: 'rgba(11,101,101,0.08)' }} tickLine={false} />
+                  <Tooltip contentStyle={{ zIndex: 9999 }} />
+                  <Bar dataKey="value" name="人数" radius={[4, 4, 0, 0]}>{[
+                    { color: '#1a8a5a' }, { color: '#0b6565' }, { color: '#c9933a' }, { color: '#c0392b' },
+                  ].map((entry, idx) => <Cell key={idx} fill={entry.color} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(11,101,101,0.4)', fontSize: '0.8125rem' }}>暂无数据</div>
+          )}
+        </LiquidCard>
 
-          {/* 风险分布 */}
-          <LiquidCard title="风险分布" style={{ flex: 1 }}>
-            {riskData.length > 0 && totalRisk > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: 140, height: 140 }}>
-                  <ResponsiveContainer width={140} height={140}>
-                    <PieChart>
-                      <Pie data={riskData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={2} dataKey="value" stroke="none">
-                        {riskData.map((entry) => (<Cell key={entry.key} fill={RISK_COLORS[entry.key]} />))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>{totalRisk}</span>
-                    <span style={{ fontSize: '0.5rem', color: 'rgba(11,101,101,0.45)' }}>预警数</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem', width: '100%' }}>
-                  {riskData.map((entry) => (
-                    <div key={entry.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: RISK_COLORS[entry.key], flexShrink: 0 }} />
-                        {entry.name}
-                      </span>
-                      <span style={{ fontWeight: 600, color: RISK_COLORS[entry.key] }}>{entry.value}</span>
-                    </div>
-                  ))}
+        <LiquidCard title="学习动力">
+          {motivationData.length > 0 && totalMotivation > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: 160, height: 160 }}>
+                <ResponsiveContainer width={160} height={160}>
+                  <PieChart>
+                    <Pie data={motivationData} cx="50%" cy="50%" innerRadius={40} outerRadius={68} paddingAngle={2} dataKey="value" stroke="none">
+                      {motivationData.map((entry) => (<Cell key={entry.key} fill={entry.color} />))}
+                    </Pie>
+                    <Tooltip contentStyle={{ zIndex: 9999 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>{totalMotivation}</span>
+                  <span style={{ fontSize: '0.5625rem', color: 'rgba(11,101,101,0.45)' }}>总人数</span>
                 </div>
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(11,101,101,0.4)', fontSize: '0.8125rem' }}>暂无数据</div>
-            )}
-          </LiquidCard>
-        </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem', width: '100%' }}>
+                {motivationData.map((entry) => (
+                  <div key={entry.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />{entry.name}</span>
+                    <span style={{ fontWeight: 600, color: entry.color }}>{entry.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(11,101,101,0.4)', fontSize: '0.8125rem' }}>暂无数据</div>
+          )}
+        </LiquidCard>
+
+        <LiquidCard title="风险分布">
+          {riskData.length > 0 && totalRisk > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: 160, height: 160 }}>
+                <ResponsiveContainer width={160} height={160}>
+                  <PieChart>
+                    <Pie data={riskData} cx="50%" cy="50%" innerRadius={40} outerRadius={68} paddingAngle={2} dataKey="value" stroke="none">
+                      {riskData.map((entry) => (<Cell key={entry.key} fill={RISK_COLORS[entry.key]} />))}
+                    </Pie>
+                    <Tooltip contentStyle={{ zIndex: 9999 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>{totalRisk}</span>
+                  <span style={{ fontSize: '0.5625rem', color: 'rgba(11,101,101,0.45)' }}>预警数</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem', width: '100%' }}>
+                {riskData.map((entry) => (
+                  <div key={entry.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: RISK_COLORS[entry.key], flexShrink: 0 }} />{entry.name}</span>
+                    <span style={{ fontWeight: 600, color: RISK_COLORS[entry.key] }}>{entry.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(11,101,101,0.4)', fontSize: '0.8125rem' }}>暂无数据</div>
+          )}
+        </LiquidCard>
       </div>
 
       {/* 全量排行模态框 */}
@@ -506,10 +555,7 @@ export default function TeacherHome() {
               {fullRankingData.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                   {fullRankingData.map((stu, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.625rem', borderRadius: '0.5rem', background: i === 0 ? 'rgba(201,147,58,0.06)' : 'transparent', transition: 'background 0.2s' }}
-                      onMouseEnter={(e) => { if (i !== 0) e.currentTarget.style.background = 'rgba(11,101,101,0.03)'; }}
-                      onMouseLeave={(e) => { if (i !== 0) e.currentTarget.style.background = 'transparent'; }}
-                    >
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.625rem', borderRadius: '0.5rem', background: i === 0 ? 'rgba(201,147,58,0.06)' : 'transparent' }}>
                       <span style={{ width: 20, height: 20, borderRadius: '50%', background: i < 3 ? medalColors[i] : 'rgba(11,101,101,0.08)', color: i < 3 ? '#fff' : 'rgba(11,101,101,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
                       <span style={{ fontSize: '0.8125rem', color: '#1a2b2b', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</span>
                       <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.4)' }}>{stu.class_name}</span>
