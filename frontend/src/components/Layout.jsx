@@ -28,7 +28,8 @@ const NAV_ITEMS = {
   ],
   student: [
     { to: '/student-view', label: '主页' },
-    { to: '/student-view/trends', label: '成绩趋势' },
+    { to: '/student-view/scores', label: '成绩分析' },
+    { to: '/student-view/alerts', label: '风险预警' },
     { to: '/student-view/suggestions', label: '学习建议' },
   ],
   parent: [

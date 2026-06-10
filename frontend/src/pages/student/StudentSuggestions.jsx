@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Clock, User, MessageCircle } from 'lucide-react';
-import LiquidCard from '../components/LiquidCard';
-import { useRole } from '../contexts/RoleContext';
-import { getSuggestions, generateSuggestion, updateSuggestionFeedback } from '../api';
+import LiquidCard from '../../components/LiquidCard';
+import MetricCard from '../../components/MetricCard';
+import { useRole } from '../../contexts/RoleContext';
+import { getSuggestions, generateSuggestion, updateSuggestionFeedback } from '../../api';
 
 export default function StudentSuggestions() {
   const { selectedStudentId, selectedStudentName } = useRole();
@@ -19,6 +20,18 @@ export default function StudentSuggestions() {
       .catch((err) => console.error('获取建议失败:', err))
       .finally(() => setLoading(false));
   }, [selectedStudentId]);
+
+  const stats = (() => {
+    if (!suggestions.length) return { total: 0, feedback: 0, unfeedback: 0, satisfiedRate: '--' };
+    const feedback = suggestions.filter(s => s.student_feedback).length;
+    const satisfied = suggestions.filter(s => s.student_feedback === 'satisfied').length;
+    return {
+      total: suggestions.length,
+      feedback,
+      unfeedback: suggestions.length - feedback,
+      satisfiedRate: feedback > 0 ? ((satisfied / feedback) * 100).toFixed(0) + '%' : '--',
+    };
+  })();
 
   const handleGenerateSuggestion = async () => {
     if (!selectedStudentId) return;
@@ -49,8 +62,9 @@ export default function StudentSuggestions() {
 
   if (!selectedStudentId) {
     return (
-      <div>
-        <h1 style={{ marginBottom: '1.25rem' }}>学习建议</h1>
+      <div className="home-page">
+        <div className="home-orb home-orb--top" />
+        <div className="home-orb home-orb--bottom" />
         <LiquidCard>
           <div style={{
             display: 'flex',
@@ -70,9 +84,16 @@ export default function StudentSuggestions() {
   }
 
   return (
-    <div>
+    <div className="home-page">
+      <div className="home-orb home-orb--top" />
+      <div className="home-orb home-orb--bottom" />
+
+      {/* 页面标题区 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <h1 style={{ margin: 0 }}>学习建议</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Sparkles size={20} style={{ color: 'var(--primary)' }} />
+          <h1 style={{ margin: 0 }}>学习建议</h1>
+        </div>
         <button
           className={generating ? 'liquid-btn-ai' : 'liquid-btn liquid-btn-primary'}
           onClick={handleGenerateSuggestion}
@@ -83,6 +104,14 @@ export default function StudentSuggestions() {
         </button>
       </div>
 
+      {/* 建议统计 */}
+      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: '1.25rem' }}>
+        <MetricCard icon="check" label="总建议数" value={stats.total} />
+        <MetricCard icon="trending" label="已反馈 / 未反馈" value={`${stats.feedback} / ${stats.unfeedback}`} />
+        <MetricCard icon="check" label="满意率" value={stats.satisfiedRate} color={stats.satisfiedRate !== '--' && parseFloat(stats.satisfiedRate) >= 60 ? 'success' : 'default'} />
+      </div>
+
+      {/* 建议列表 */}
       {loading ? (
         <LiquidCard>
           <p className="text-tertiary" style={{ textAlign: 'center', padding: '3rem 0' }}>加载中...</p>
@@ -104,20 +133,12 @@ export default function StudentSuggestions() {
                   {s.generate_time ? new Date(s.generate_time).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--'}
                 </span>
                 {s.student_feedback && (
-                  <span style={{
-                    fontSize: '0.6875rem',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: '9999px',
-                    background: s.student_feedback === 'satisfied'
-                      ? 'rgba(26,138,90,0.08)'
-                      : s.student_feedback === 'unsatisfied'
-                      ? 'rgba(192,57,43,0.08)'
-                      : 'rgba(11,101,101,0.06)',
-                    color: s.student_feedback === 'satisfied'
-                      ? 'var(--success)'
-                      : s.student_feedback === 'unsatisfied'
-                      ? 'var(--danger)'
-                      : 'rgba(11,101,101,0.65)',
+                  <span className={`risk-badge ${s.student_feedback === 'satisfied' ? 'risk-low' : s.student_feedback === 'unsatisfied' ? 'risk-high' : ''}`} style={{
+                    ...(s.student_feedback === 'neutral' ? {
+                      background: 'rgba(11,101,101,0.06)',
+                      border: '0.5px solid rgba(11,101,101,0.12)',
+                      color: 'rgba(11,101,101,0.65)',
+                    } : {}),
                   }}>
                     {s.student_feedback === 'satisfied' ? '满意' :
                      s.student_feedback === 'unsatisfied' ? '不满意' : '一般'}
@@ -127,7 +148,6 @@ export default function StudentSuggestions() {
               <div style={{ fontSize: '0.8125rem', color: '#2a3d3d', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 {s.suggestion_content}
               </div>
-              {/* 反馈按钮 */}
               {!s.student_feedback && (
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                   <button
