@@ -1847,3 +1847,10 @@ a:hover {
   display: inline;
   vertical-align: middle;
 }
+
+/* ----------------------------------------------------------
+   饼图 Tooltip 层级修复 — 确保 Tooltip 在中心玻璃之上
+   ---------------------------------------------------------- */
+.recharts-tooltip-wrapper {
+  z-index: 100 !important;
+}

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Search, ChevronDown, X, Shield, Menu } from 'lucide-react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { GraduationCap, User, Users, Search, ChevronDown, X, Shield, Menu, ChevronLeft, ChevronRight, School } from 'lucide-react';
 import { useRole } from '../contexts/RoleContext';
 import { searchStudents, searchTeachers, getTeachers, getStudents, getTeacherClasses } from '../api';
+import LiquidSelect from './LiquidSelect';
 
 const ROLE_CONFIG = {
   admin: { label: '管理员', icon: Shield, path: '/admin' },
@@ -23,8 +24,8 @@ const NAV_ITEMS = {
     { to: '/teacher', label: '主页', end: true },
     { to: '/teacher/overview', label: '学情概览' },
     { to: '/teacher/student', label: '学生详情' },
-    
     { to: '/teacher/alert', label: '风险预警' },
+    { to: '/teacher/score', label: '成绩管理' },
   ],
   student: [
     { to: '/student-view', label: '主页' },
@@ -64,9 +65,43 @@ export default function Layout() {
     selectedStudentId, selectedStudentName, selectStudent, clearStudent,
     selectedTeacherId, selectedTeacherName, selectTeacher, clearTeacher,
     selectedAdminId, selectedAdminName, selectAdmin, clearAdmin,
-    setSelectedTeacherClassId,
+    selectedTeacherClassId, setSelectedTeacherClassId, teacherClasses, setTeacherClasses,
   } = useRole();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 根据当前 URL 路径自动同步角色，修复直接访问 /teacher 等路径时导航栏不同步的问题
+  useEffect(() => {
+    const pathRole = location.pathname.startsWith('/teacher') ? 'teacher'
+      : location.pathname.startsWith('/student-view') ? 'student'
+      : location.pathname.startsWith('/parent-view') ? 'parent'
+      : location.pathname.startsWith('/admin') ? 'admin'
+      : null;
+    if (pathRole && pathRole !== role) {
+      switchRole(pathRole);
+    }
+    // 当在 admin 路径但没有 admin 身份时，自动设置默认身份
+    if (pathRole === 'admin' && !selectedAdminId) {
+      selectAdmin('admin', '系统管理员');
+    }
+    // 当在 teacher 路径且有已保存的教师身份但无班级数据时，重新获取班级
+    if (pathRole === 'teacher' && selectedTeacherId && teacherClasses.length === 0) {
+      getTeacherClasses(selectedTeacherId).then(res => {
+        const homeroom = res.data?.data?.homeroom_classes || [];
+        const instructor = res.data?.data?.instructor_classes || [];
+        const allClasses = [
+          ...homeroom.map(c => ({ ...c, role: '班主任' })),
+          ...instructor.map(c => ({ ...c, role: '授课教师' })),
+        ];
+        setTeacherClasses(allClasses);
+        if (allClasses.length > 0 && !selectedTeacherClassId) {
+          setSelectedTeacherClassId(allClasses[0].class_id);
+        }
+      }).catch(err => {
+        console.error('恢复教师班级数据失败:', err);
+      });
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 角色下拉
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
@@ -184,15 +219,22 @@ export default function Layout() {
       // 获取教师的班级信息
       try {
         const res = await getTeacherClasses(person.teacher_id);
-        const classes = res.data?.data?.homeroom_classes || res.data?.data?.instructor_classes || [];
-        if (classes.length > 0) {
-          setSelectedTeacherClassId(classes[0].class_id);
+        const homeroom = res.data?.data?.homeroom_classes || [];
+        const instructor = res.data?.data?.instructor_classes || [];
+        const allClasses = [
+          ...homeroom.map(c => ({ ...c, role: '班主任' })),
+          ...instructor.map(c => ({ ...c, role: '授课教师' })),
+        ];
+        setTeacherClasses(allClasses);
+        if (allClasses.length > 0) {
+          setSelectedTeacherClassId(allClasses[0].class_id);
         } else {
           setSelectedTeacherClassId('');
         }
       } catch (err) {
         console.error('获取教师班级失败:', err);
         setSelectedTeacherClassId('');
+        setTeacherClasses([]);
       }
     } else {
       selectStudent(person.student_id, person.student_name);
@@ -224,27 +266,35 @@ export default function Layout() {
   // 快捷登录 - 随机教师
   const handleTeacherQuickLogin = async (e) => {
     e?.stopPropagation();
+    setShowRoleDropdown(false);
     try {
       const res = await getTeachers();
       const teachers = res.data?.data || [];
       if (teachers.length > 0) {
         const t = teachers[0];
         selectTeacher(t.teacher_id, t.teacher_name);
+        // 获取班级
         try {
           const classRes = await getTeacherClasses(t.teacher_id);
-          const classes = classRes.data?.data?.homeroom_classes || classRes.data?.data?.instructor_classes || [];
-          if (classes.length > 0) {
-            setSelectedTeacherClassId(classes[0].class_id);
+          const homeroom = classRes.data?.data?.homeroom_classes || [];
+          const instructor = classRes.data?.data?.instructor_classes || [];
+          const allClasses = [
+            ...homeroom.map(c => ({ ...c, role: '班主任' })),
+            ...instructor.map(c => ({ ...c, role: '授课教师' })),
+          ];
+          setTeacherClasses(allClasses);
+          if (allClasses.length > 0) {
+            setSelectedTeacherClassId(allClasses[0].class_id);
           } else {
             setSelectedTeacherClassId('');
           }
         } catch (err) {
           setSelectedTeacherClassId('');
+          setTeacherClasses([]);
         }
+        // 先切换角色再导航
         switchRole('teacher');
-        setLoginModalOpen(false);
-        setShowRoleDropdown(false);
-        navigate('/teacher');
+        navigate('/teacher', { replace: true });
       }
     } catch (err) {
       console.error('快捷登录失败:', err);
@@ -279,6 +329,17 @@ export default function Layout() {
     return null;
   })();
 
+  // 班级切换处理
+  const handleClassChange = (classId) => {
+    setSelectedTeacherClassId(classId);
+  };
+
+  const currentClass = teacherClasses.find(c => c.class_id === selectedTeacherClassId);
+  const classOptions = teacherClasses.map(c => ({
+    value: c.class_id,
+    label: `${c.class_name || c.class_id}${c.role ? ` (${c.role})` : ''}`,
+  }));
+
   const navItems = NAV_ITEMS[role] || NAV_ITEMS.admin;
   const currentRoleConfig = ROLE_CONFIG[role];
 
@@ -311,9 +372,34 @@ export default function Layout() {
           }} />
 
           {/* 角色切换按钮 */}
-          <div ref={roleDropdownRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <div
-              ref={roleTriggerRef}
+          <div ref={roleDropdownRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            {/* 教师班级切换下拉 */}
+            {role === 'teacher' && teacherClasses.length > 1 && (
+              <LiquidSelect
+                value={selectedTeacherClassId}
+                onChange={handleClassChange}
+                options={classOptions}
+                style={{ width: 'auto', minWidth: 130 }}
+                triggerStyle={{ padding: '0.3125rem 0.5rem', fontSize: '0.6875rem', minWidth: 'unset' }}
+              />
+            )}
+            {role === 'teacher' && teacherClasses.length <= 1 && currentClass && (
+              <span style={{
+                fontSize: '0.6875rem',
+                color: 'rgba(11,101,101,0.55)',
+                fontWeight: 500,
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(11,101,101,0.04)',
+                borderRadius: '0.375rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}>
+                <School size={11} />
+                {currentClass.class_name || currentClass.class_id}
+              </span>
+            )}
+              <div ref={roleTriggerRef}
               className="liquid-nav-item"
               role="button"
               tabIndex={0}
