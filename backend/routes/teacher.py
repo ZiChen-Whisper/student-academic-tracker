@@ -216,6 +216,17 @@ def get_teacher_stats():
             "ORDER BY score DESC LIMIT 10"
         )
 
+    # 出勤率分布
+    attendance_distribution = query_all(
+        f"SELECT "
+        f"SUM(CASE WHEN lb.attendance_rate >= 90 THEN 1 ELSE 0 END) as ge90, "
+        f"SUM(CASE WHEN lb.attendance_rate >= 80 AND lb.attendance_rate < 90 THEN 1 ELSE 0 END) as r80_90, "
+        f"SUM(CASE WHEN lb.attendance_rate >= 70 AND lb.attendance_rate < 80 THEN 1 ELSE 0 END) as r70_80, "
+        f"SUM(CASE WHEN lb.attendance_rate < 70 THEN 1 ELSE 0 END) as lt70 "
+        f"FROM learning_behavior lb JOIN student s ON lb.student_id = s.student_id {behavior_filter}",
+        params_1 if params_1 else None
+    )
+
     return jsonify({
         'gender': {
             'male': gender['male_count'] or 0,
@@ -227,6 +238,12 @@ def get_teacher_stats():
             'avg_sleep_hours': behavior['avg_sleep_hours'] or 0,
             'avg_tutoring': behavior['avg_tutoring'] or 0,
             'avg_physical': behavior['avg_physical'] or 0,
+        },
+        'attendance_distribution': {
+            'ge90': (attendance_distribution[0] or {}).get('ge90', 0) or 0,
+            'r80_90': (attendance_distribution[0] or {}).get('r80_90', 0) or 0,
+            'r70_80': (attendance_distribution[0] or {}).get('r70_80', 0) or 0,
+            'lt70': (attendance_distribution[0] or {}).get('lt70', 0) or 0,
         },
         'intervention': {
             'pending': intervention_map.get('pending', 0),

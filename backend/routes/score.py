@@ -165,3 +165,21 @@ def get_class_stats():
 
     stats = query_all(sql, params if params else None)
     return jsonify(stats)
+
+
+@score_bp.route('/class-scores', methods=['GET'])
+def get_class_scores():
+    """获取指定班级的所有学生成绩，供教师成绩管理页面使用"""
+    class_id = request.args.get('class_id', '')
+    if not class_id:
+        return jsonify({'error': '缺少 class_id 参数'}), 400
+
+    scores = query_all(
+        "SELECT es.score_id, es.student_id, s.student_name, es.subject_id, es.exam_stage, es.score, es.score_date "
+        "FROM exam_score es "
+        "JOIN student s ON es.student_id = s.student_id "
+        "WHERE s.student_class_id = %s "
+        "ORDER BY es.student_id, es.subject_id, es.exam_stage",
+        (class_id,)
+    )
+    return jsonify({'data': scores})

@@ -677,6 +677,18 @@ a:hover {
   to { transform: rotate(360deg); }
 }
 
+/* Recharts 图表焦点轮廓移除 */
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-sector:focus,
+.recharts-cartesian-grid:focus,
+.recharts-area:focus,
+.recharts-bar:focus,
+.recharts-line:focus,
+.recharts-default-tooltip:focus {
+  outline: none !important;
+}
+
 /* ----------------------------------------------------------
    §5.4 按钮 .liquid-btn
    ---------------------------------------------------------- */
@@ -1579,7 +1591,19 @@ a:hover {
   backdrop-filter: none;
 }
 
+/* 教师专属：白绿渐变（与管理端一致） */
+.welcome-banner--teacher {
+  background: linear-gradient(90deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.5) 25%, var(--primary) 100%);
+  border: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 .welcome-banner--admin:hover {
+  background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.4) 25%, var(--primary-dark) 100%);
+}
+
+.welcome-banner--teacher:hover {
   background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.4) 25%, var(--primary-dark) 100%);
 }
 
@@ -1588,23 +1612,33 @@ a:hover {
   border-color: rgba(11,101,101,0.15);
 }
 
-.welcome-banner--admin .welcome-banner-text h1 {
+.welcome-banner--teacher .welcome-banner-icon {
+  background: rgba(11,101,101,0.12);
+  border-color: rgba(11,101,101,0.15);
+}
+
+.welcome-banner--admin .welcome-banner-text h1,
+.welcome-banner--teacher .welcome-banner-text h1 {
   color: var(--primary-dark);
 }
 
-.welcome-banner--admin .welcome-banner-greeting {
+.welcome-banner--admin .welcome-banner-greeting,
+.welcome-banner--teacher .welcome-banner-greeting {
   color: rgba(11,101,101,0.5);
 }
 
-.welcome-banner--admin .welcome-banner-text p {
+.welcome-banner--admin .welcome-banner-text p,
+.welcome-banner--teacher .welcome-banner-text p {
   color: rgba(11,101,101,0.55);
 }
 
-.welcome-banner--admin .welcome-banner-orb {
+.welcome-banner--admin .welcome-banner-orb,
+.welcome-banner--teacher .welcome-banner-orb {
   background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 40%, transparent 70%);
 }
 
-.welcome-banner--admin::before {
+.welcome-banner--admin::before,
+.welcome-banner--teacher::before {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), rgba(255,255,255,0.3), transparent);
 }
 
@@ -1659,11 +1693,12 @@ a:hover {
 /* 管理员快捷入口 */
 .welcome-banner-shortcuts {
   display: flex;
-  flex-direction: column;
   gap: 0.375rem;
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .welcome-banner-shortcut-btn {

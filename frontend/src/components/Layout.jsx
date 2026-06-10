@@ -22,7 +22,6 @@ const NAV_ITEMS = {
   ],
   teacher: [
     { to: '/teacher', label: '主页', end: true },
-    { to: '/teacher/overview', label: '学情概览' },
     { to: '/teacher/student', label: '学生详情' },
     { to: '/teacher/alert', label: '风险预警' },
     { to: '/teacher/score', label: '成绩管理' },
@@ -337,7 +336,7 @@ export default function Layout() {
   const currentClass = teacherClasses.find(c => c.class_id === selectedTeacherClassId);
   const classOptions = teacherClasses.map(c => ({
     value: c.class_id,
-    label: `${c.class_name || c.class_id}${c.role ? ` (${c.role})` : ''}`,
+    label: c.class_name || c.class_id,
   }));
 
   const navItems = NAV_ITEMS[role] || NAV_ITEMS.admin;
@@ -373,17 +372,8 @@ export default function Layout() {
 
           {/* 角色切换按钮 */}
           <div ref={roleDropdownRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            {/* 教师班级切换下拉 */}
-            {role === 'teacher' && teacherClasses.length > 1 && (
-              <LiquidSelect
-                value={selectedTeacherClassId}
-                onChange={handleClassChange}
-                options={classOptions}
-                style={{ width: 'auto', minWidth: 130 }}
-                triggerStyle={{ padding: '0.3125rem 0.5rem', fontSize: '0.6875rem', minWidth: 'unset' }}
-              />
-            )}
-            {role === 'teacher' && teacherClasses.length <= 1 && currentClass && (
+            {/* 教师当前班级标签 */}
+            {role === 'teacher' && currentClass && (
               <span style={{
                 fontSize: '0.6875rem',
                 color: 'rgba(11,101,101,0.55)',
