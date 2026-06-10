@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ReferenceLine } from 'recharts';
-import { Search, User, BookOpen, Home, AlertTriangle, Sparkles, Clock, Brain, X, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, Square, Users, Database, Loader, Check, AlertCircle, Download, Target, TrendingUp, Copy, ClipboardList } from 'lucide-react';
+import { Search, User, BookOpen, Home, AlertTriangle, Sparkles, Clock, Brain, X, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, Square, Users, Database, Loader, Check, CheckCircle, AlertCircle, Download, Target, TrendingUp, Copy, ClipboardList, RefreshCw } from 'lucide-react';
 import LiquidCard from '../../components/LiquidCard';
+import LiquidSelect from '../../components/LiquidSelect';
 import ChartTooltip from '../../components/ChartTooltip';
 import ChartFilterBtn from '../../components/ChartFilterBtn';
 import { useRole } from '../../contexts/RoleContext';
-import { getStudents, getStudent, getScoreTrend, getSuggestions, generateSuggestion, getAlerts, updateSuggestionFeedback, nl2sqlQuery, getClassStats } from '../../api';
+import { getStudents, getStudent, getScoreTrend, getSuggestions, generateSuggestion, getAlerts, updateSuggestionFeedback, nl2sqlQuery, getClassStats, updateTableRow } from '../../api';
 
 const SUBJECT_MAP = { SUBJ_MATH: '数学', SUBJ_PORTUGUESE: '葡萄牙语', SUBJ_GENERAL: '综合' };
 const SUBJECT_COLORS = { SUBJ_MATH: '#0b6565', SUBJ_PORTUGUESE: '#c9933a', SUBJ_GENERAL: '#1a8a5a' };
@@ -85,6 +86,12 @@ export default function TeacherStudent() {
   const [classStats, setClassStats] = useState([]);
   const [studentAlerts, setStudentAlerts] = useState({});
   const tableContainerRef = useRef(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingCell, setEditingCell] = useState(null); // { studentId, field, value }
+  const cellInputRef = useRef(null);
 
   // 获取学生列表
   useEffect(() => {
@@ -101,8 +108,8 @@ export default function TeacherStudent() {
       else { setStudents([]); setTotalStudents(0); }
       setClassStats(statsRes.data?.data || (Array.isArray(statsRes.data) ? statsRes.data : []));
     }).catch((err) => console.error('获取学生列表失败:', err))
-      .finally(() => setLoading(false));
-  }, [classId]);
+      .finally(() => { setLoading(false); setLastUpdated(new Date()); setRefreshing(false); });
+  }, [classId, refreshKey]);
 
   // 获取预警映射
   useEffect(() => {
@@ -249,6 +256,36 @@ export default function TeacherStudent() {
     setTimeout(() => setBatchResult(null), 4000);
   };
 
+  const handleCellDoubleClick = (studentId, field, value) => {
+    setEditingCell({ studentId, field, value: String(value ?? '') });
+  };
+
+  const handleCellSaveWithValue = async (cellData) => {
+    if (!cellData) return;
+    const { studentId, field, value: newValue } = cellData;
+    const student = students.find(s => s.student_id === studentId);
+    if (!student) { setEditingCell(null); return; }
+    if (String(student[field] ?? '') === String(newValue)) { setEditingCell(null); return; }
+    try {
+      const updateValue = field === 'student_age' ? parseInt(newValue) || 0 : newValue;
+      await updateTableRow('student', studentId, { [field]: updateValue });
+      setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, [field]: updateValue } : s));
+    } catch (err) {
+      console.error('更新学生信息失败:', err);
+    }
+    setEditingCell(null);
+  };
+
+  const handleCellSave = async () => {
+    if (!editingCell) return;
+    await handleCellSaveWithValue(editingCell);
+  };
+
+  const handleCellKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleCellSave(); }
+    else if (e.key === 'Escape') { setEditingCell(null); }
+  };
+
   if (!classId) {
     return (
       <div className="home-page">
@@ -261,8 +298,8 @@ export default function TeacherStudent() {
           <h1 style={{ margin: 0 }}>学生详情</h1>
         </div>
         <LiquidCard>
-          <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-            <Users size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+            <Users size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} />
             <p className="text-tertiary">请先选择班级</p>
           </div>
         </LiquidCard>
@@ -283,6 +320,14 @@ export default function TeacherStudent() {
         <span className="text-tertiary" style={{ fontSize: '0.75rem', marginLeft: '0.25rem' }}>
           共 {totalStudents} 名学生{keyword.trim() && filteredStudents.length !== totalStudents ? `（筛选后 ${filteredStudents.length} 名）` : ''}
         </span>
+        {lastUpdated && (
+          <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.35)', marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            更新于 {lastUpdated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        )}
+        <button className="liquid-btn liquid-btn-sm" onClick={() => { setRefreshKey(k => k + 1); setRefreshing(true); }} disabled={refreshing} style={{ marginLeft: '0.125rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', height: '1.5rem', fontSize: '0.625rem' }} title="刷新数据">
+          <RefreshCw size={10} style={refreshing ? { animation: 'spin-rotate 0.6s linear infinite' } : {}} />
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'nowrap', alignItems: 'center' }}>
@@ -296,10 +341,17 @@ export default function TeacherStudent() {
         <button className="liquid-btn liquid-btn-sm" onClick={() => setQueryModalOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', height: '2.125rem' }}>
           <Sparkles size={13} /> 智能查询
         </button>
+        <button
+          className={`liquid-btn liquid-btn-sm${selectMode ? ' liquid-btn-primary' : ''}`}
+          onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedIds(new Set()); }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', height: '2.125rem' }}
+        >
+          <CheckSquare size={13} />{selectMode ? '退出多选' : '多选'}
+        </button>
       </div>
 
       {/* 批量选择栏 */}
-      {selectedIds.size > 0 && (
+      {selectMode && selectedIds.size > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(11,101,101,0.03)', border: '0.5px solid rgba(11,101,101,0.06)' }}>
           <CheckSquare size={14} style={{ color: 'var(--primary)' }} />
           <span style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>已选 {selectedIds.size} 名学生</span>
@@ -322,11 +374,13 @@ export default function TeacherStudent() {
               <table className="liquid-table">
                 <thead>
                   <tr>
+                    {selectMode && (
                     <th style={{ width: 40, textAlign: 'center', padding: '0.625rem 0.5rem' }}>
                       <span onClick={toggleSelectAll} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                         {allSelectedOnPage ? <CheckSquare size={14} style={{ color: 'var(--primary)' }} /> : someSelectedOnPage ? <Square size={14} style={{ color: 'var(--primary)', opacity: 0.5 }} /> : <Square size={14} style={{ color: 'rgba(11,101,101,0.3)' }} />}
                       </span>
                     </th>
+                    )}
                     <th className="sortable-th" onClick={() => handleSort('student_id')}>学生ID <SortIcon field="student_id" /></th>
                     <th className="sortable-th" onClick={() => handleSort('student_name')}>姓名 <SortIcon field="student_name" /></th>
                     <th className="sortable-th" onClick={() => handleSort('student_gender')}>性别 <SortIcon field="student_gender" /></th>
@@ -340,16 +394,91 @@ export default function TeacherStudent() {
                   {pagedStudents.map((s) => {
                     const alert = studentAlerts[s.student_id];
                     return (
-                      <tr key={s.student_id} style={{ cursor: 'pointer' }} onClick={() => handleOpenDetail(s)}>
+                      <tr key={s.student_id}>
+                        {selectMode && (
                         <td style={{ textAlign: 'center', padding: '0.5rem 0.5rem' }} onClick={(e) => e.stopPropagation()}>
                           <span onClick={() => toggleSelect(s.student_id)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
                             {selectedIds.has(s.student_id) ? <CheckSquare size={14} style={{ color: 'var(--primary)' }} /> : <Square size={14} style={{ color: 'rgba(11,101,101,0.3)' }} />}
                           </span>
                         </td>
+                        )}
                         <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{s.student_id}</td>
-                        <td style={{ fontWeight: 500 }}>{s.student_name || '--'}</td>
-                        <td>{s.student_gender === 'M' ? '男' : s.student_gender === 'F' ? '女' : s.student_gender || '--'}</td>
-                        <td>{s.student_age ?? '--'}</td>
+                        <td
+                          onDoubleClick={(e) => { e.stopPropagation(); handleCellDoubleClick(s.student_id, 'student_name', s.student_name); }}
+                          style={{
+                            fontWeight: 500,
+                            cursor: 'text',
+                            position: editingCell?.studentId === s.student_id && editingCell?.field === 'student_name' ? 'relative' : undefined,
+                            background: editingCell?.studentId === s.student_id && editingCell?.field === 'student_name' ? 'rgba(11,101,101,0.03)' : undefined,
+                            boxShadow: editingCell?.studentId === s.student_id && editingCell?.field === 'student_name' ? 'inset 0 0 0 0.5px rgba(11,101,101,0.2), 0 0 0 2px rgba(11,101,101,0.06)' : undefined,
+                          }}
+                        >
+                          {editingCell?.studentId === s.student_id && editingCell?.field === 'student_name' ? (
+                            <input
+                              ref={cellInputRef}
+                              type="text"
+                              value={editingCell.value}
+                              onChange={(e) => setEditingCell(prev => prev ? { ...prev, value: e.target.value } : null)}
+                              onKeyDown={handleCellKeyDown}
+                              onBlur={handleCellSave}
+                              autoFocus
+                              style={{
+                                position: 'absolute', top: 1, left: 1, right: 1, bottom: 1,
+                                padding: '0 0.375rem', fontSize: '0.8125rem', lineHeight: '1.5rem',
+                                border: 'none', borderRadius: '0.125rem', boxSizing: 'border-box',
+                                outline: 'none', zIndex: 1, background: 'rgba(255,255,255,0.6)',
+                                color: 'var(--primary-dark)', fontFamily: 'inherit',
+                              }}
+                            />
+                          ) : (s.student_name || '--')}
+                        </td>
+                        <td
+                          onDoubleClick={(e) => { e.stopPropagation(); handleCellDoubleClick(s.student_id, 'student_gender', s.student_gender); }}
+                          style={{
+                            cursor: 'text',
+                            position: editingCell?.studentId === s.student_id && editingCell?.field === 'student_gender' ? 'relative' : undefined,
+                            background: editingCell?.studentId === s.student_id && editingCell?.field === 'student_gender' ? 'rgba(11,101,101,0.03)' : undefined,
+                            boxShadow: editingCell?.studentId === s.student_id && editingCell?.field === 'student_gender' ? 'inset 0 0 0 0.5px rgba(11,101,101,0.2), 0 0 0 2px rgba(11,101,101,0.06)' : undefined,
+                          }}
+                        >
+                          {editingCell?.studentId === s.student_id && editingCell?.field === 'student_gender' ? (
+                            <LiquidSelect
+                              value={editingCell.value}
+                              onChange={(v) => handleCellSaveWithValue({ ...editingCell, value: v })}
+                              options={[{ value: 'M', label: '男' }, { value: 'F', label: '女' }]}
+                              style={{ width: '100%' }}
+                              triggerStyle={{ fontSize: '0.8125rem', padding: '0.25rem 0.5rem', minHeight: '1.5rem' }}
+                            />
+                          ) : (s.student_gender === 'M' ? '男' : s.student_gender === 'F' ? '女' : s.student_gender || '--')}
+                        </td>
+                        <td
+                          onDoubleClick={(e) => { e.stopPropagation(); handleCellDoubleClick(s.student_id, 'student_age', s.student_age); }}
+                          style={{
+                            cursor: 'text',
+                            position: editingCell?.studentId === s.student_id && editingCell?.field === 'student_age' ? 'relative' : undefined,
+                            background: editingCell?.studentId === s.student_id && editingCell?.field === 'student_age' ? 'rgba(11,101,101,0.03)' : undefined,
+                            boxShadow: editingCell?.studentId === s.student_id && editingCell?.field === 'student_age' ? 'inset 0 0 0 0.5px rgba(11,101,101,0.2), 0 0 0 2px rgba(11,101,101,0.06)' : undefined,
+                          }}
+                        >
+                          {editingCell?.studentId === s.student_id && editingCell?.field === 'student_age' ? (
+                            <input
+                              ref={cellInputRef}
+                              type="number"
+                              value={editingCell.value}
+                              onChange={(e) => setEditingCell(prev => prev ? { ...prev, value: e.target.value } : null)}
+                              onKeyDown={handleCellKeyDown}
+                              onBlur={handleCellSave}
+                              autoFocus
+                              style={{
+                                position: 'absolute', top: 1, left: 1, right: 1, bottom: 1,
+                                padding: '0 0.375rem', fontSize: '0.8125rem', lineHeight: '1.5rem',
+                                border: 'none', borderRadius: '0.125rem', boxSizing: 'border-box',
+                                outline: 'none', zIndex: 1, background: 'rgba(255,255,255,0.6)',
+                                color: 'var(--primary-dark)', fontFamily: 'inherit',
+                              }}
+                            />
+                          ) : (s.student_age ?? '--')}
+                        </td>
                         <td>{s.student_class_id || '--'}</td>
                         <td>{alert ? <span className={'risk-badge ' + (alert.risk_level === 'high' ? 'risk-high' : alert.risk_level === 'medium' ? 'risk-medium' : 'risk-low')}>{alert.risk_level === 'high' ? '高' : alert.risk_level === 'medium' ? '中' : '低'}</span> : <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.3)' }}>--</span>}</td>
                         <td>
@@ -372,8 +501,8 @@ export default function TeacherStudent() {
             )}
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-            <User size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+            <User size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} />
             <p className="text-tertiary">{keyword ? '未找到匹配的学生' : '暂无学生数据'}</p>
           </div>
         )}
@@ -632,7 +761,7 @@ export default function TeacherStudent() {
                   </LiquidCard>
                 )}
                 {queryTableData && queryTableData.rows.length === 0 && !queryResult.error && (
-                  <LiquidCard><div style={{ textAlign: 'center', padding: '2rem 0' }}><Database size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} /><p className="text-tertiary">查询结果为空</p></div></LiquidCard>
+                  <LiquidCard><div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 0' }}><Database size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} /><p className="text-tertiary">查询结果为空</p></div></LiquidCard>
                 )}
               </div>
             )}
@@ -646,8 +775,8 @@ export default function TeacherStudent() {
             )}
 
             {!queryResult && !queryLoading && queryHistory.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                <Sparkles size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 0' }}>
+                <Sparkles size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} />
                 <p className="text-tertiary" style={{ fontSize: '0.875rem' }}>输入自然语言问题，AI 将自动生成 SQL 查询</p>
                 <p className="text-placeholder" style={{ fontSize: '0.75rem' }}>点击上方示例问题快速体验</p>
               </div>

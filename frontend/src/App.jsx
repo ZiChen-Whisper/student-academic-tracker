@@ -6,7 +6,7 @@ import AdminDataManagement, { ClassSubjectPage, CoursePage } from './pages/admin
 import AdminChangeHistory from './pages/admin/AdminChangeHistory';
 import TableViewer from './components/TableViewer';
 import TeacherHome from './pages/teacher/TeacherHome';
-import TeacherOverview from './pages/teacher/TeacherOverview';
+
 import TeacherStudent from './pages/teacher/TeacherStudent';
 import TeacherAlert from './pages/teacher/TeacherAlert';
 import TeacherScore from './pages/teacher/TeacherScore';
@@ -47,7 +47,6 @@ function App() {
 
             {/* 教师视角 */}
             <Route path="teacher" element={<TeacherHome />} />
-            <Route path="teacher/overview" element={<TeacherOverview />} />
             <Route path="teacher/student" element={<TeacherStudent />} />
             <Route path="teacher/alert" element={<TeacherAlert />} />
             <Route path="teacher/score" element={<TeacherScore />} />

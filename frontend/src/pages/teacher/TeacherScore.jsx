@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, BookOpen, X, ArrowUpDown, ArrowUp, ArrowDown, Users, Loader, Check, Pencil, Clock } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, BookOpen, ArrowUpDown, ArrowUp, ArrowDown, Clock, RefreshCw } from 'lucide-react';
 import LiquidCard from '../../components/LiquidCard';
 import LiquidSelect from '../../components/LiquidSelect';
 import { useRole } from '../../contexts/RoleContext';
-import { getStudents, getTableData, updateTableRow } from '../../api';
+import { getStudents, getClassScores, updateTableRow } from '../../api';
 
 const SUBJECT_MAP = { SUBJ_GENERAL: '综合', SUBJ_MATH: '数学', SUBJ_PORTUGUESE: '葡萄牙语' };
+const SUBJECT_FULL_SCORE = { SUBJ_GENERAL: 100, SUBJ_MATH: 20, SUBJ_PORTUGUESE: 20 };
 const STAGE_MAP = { G1: 'G1', G2: 'G2', G3: 'G3' };
 const SORT_DIR = { asc: 'asc', desc: 'desc' };
 
@@ -18,16 +19,16 @@ export default function TeacherScore() {
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
-  const [stageFilter, setStageFilter] = useState('G3');
+  const [stageFilter, setStageFilter] = useState('');
   const [sortField, setSortField] = useState('student_id');
   const [sortDir, setSortDir] = useState(SORT_DIR.asc);
   const [page, setPage] = useState(1);
   const pageSize = 20;
-  const [editScore, setEditScore] = useState(null); // { score_id, student_id, score, subject_id, exam_stage }
-  const [editValue, setEditValue] = useState('');
-  const [editSaving, setEditSaving] = useState(false);
-  const [editMsg, setEditMsg] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingCell, setEditingCell] = useState(null); // { scoreId, value }
+  const cellInputRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     if (!classId) { setStudents([]); setScores([]); setLoading(false); return; }
@@ -38,24 +39,20 @@ export default function TeacherScore() {
       const studentData = studentsRes.data?.data || (Array.isArray(studentsRes.data) ? studentsRes.data : []);
       setStudents(studentData);
 
-      // 获取考试成绩
-      const scoresRes = await getTableData('exam_score');
-      const allScores = Array.isArray(scoresRes.data?.data) ? scoresRes.data.data
-        : Array.isArray(scoresRes.data) ? scoresRes.data : [];
-
-      // 过滤该班级学生的成绩
-      const classStudentIds = new Set(studentData.map(s => s.student_id));
-      const filteredScores = allScores.filter(s => classStudentIds.has(s.student_id));
-      setScores(filteredScores);
+      // 使用教师专属API获取班级成绩
+      const scoresRes = await getClassScores({ class_id: classId });
+      const allScores = scoresRes.data?.data || (Array.isArray(scoresRes.data) ? scoresRes.data : []);
+      setScores(allScores);
     } catch (err) {
       console.error('获取成绩数据失败:', err);
     } finally {
       setLoading(false);
       setLastUpdated(new Date());
+      setRefreshing(false);
     }
   }, [classId]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
 
   // 构建学生成绩映射: student_id -> { SUBJ_GENERAL_G3: score, ... }
   const scoreMap = {};
@@ -102,27 +99,36 @@ export default function TeacherScore() {
   const totalPages = Math.ceil(sortedScores.length / pageSize);
   const pagedScores = sortedScores.slice((page - 1) * pageSize, page * pageSize);
 
-  const openEdit = (score) => {
-    setEditScore(score);
-    setEditValue(String(score.score));
-    setEditMsg(null);
+  const handleScoreDoubleClick = (score) => {
+    setEditingCell({ scoreId: score.score_id, value: String(score.score) });
   };
-  const closeEdit = () => { setEditScore(null); setEditValue(''); setEditMsg(null); };
 
-  const handleSave = async () => {
-    if (!editScore) return;
-    const newScore = parseFloat(editValue);
-    if (isNaN(newScore) || newScore < 0) { setEditMsg({ type: 'error', text: '请输入有效的分数' }); return; }
-    setEditSaving(true);
+  const handleCellSave = async () => {
+    if (!editingCell) return;
+    const newScore = parseFloat(editingCell.value);
+    if (isNaN(newScore) || newScore < 0) {
+      setEditingCell(null);
+      return;
+    }
+    // Find the original score to check if changed
+    const originalScore = scores.find(s => s.score_id === editingCell.scoreId);
+    if (originalScore && String(originalScore.score) === String(editingCell.value)) {
+      setEditingCell(null);
+      return;
+    }
     try {
-      await updateTableRow('exam_score', editScore.score_id, { score: newScore });
-      setEditMsg({ type: 'success', text: '成绩更新成功' });
-      // 更新本地状态
-      setScores(prev => prev.map(s => s.score_id === editScore.score_id ? { ...s, score: newScore } : s));
-      setTimeout(() => closeEdit(), 1000);
+      await updateTableRow('exam_score', editingCell.scoreId, { score: newScore });
+      setScores(prev => prev.map(s => s.score_id === editingCell.scoreId ? { ...s, score: newScore } : s));
+      setLastUpdated(new Date());
     } catch (err) {
-      setEditMsg({ type: 'error', text: err.response?.data?.error || '更新失败' });
-    } finally { setEditSaving(false); }
+      console.error('更新成绩失败:', err);
+    }
+    setEditingCell(null);
+  };
+
+  const handleCellKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleCellSave(); }
+    else if (e.key === 'Escape') { setEditingCell(null); }
   };
 
   // 获取学生信息
@@ -140,8 +146,8 @@ export default function TeacherScore() {
           <h1 style={{ margin: 0 }}>成绩管理</h1>
         </div>
         <LiquidCard>
-          <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-            <BookOpen size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+            <BookOpen size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} />
             <p className="text-tertiary">请先选择班级</p>
           </div>
         </LiquidCard>
@@ -168,6 +174,9 @@ export default function TeacherScore() {
             更新于 {lastUpdated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </span>
         )}
+        <button className="liquid-btn liquid-btn-sm" onClick={() => { setRefreshKey(k => k + 1); setRefreshing(true); }} disabled={refreshing} style={{ marginLeft: '0.125rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', height: '1.5rem', fontSize: '0.625rem' }} title="刷新数据">
+          <RefreshCw size={10} style={refreshing ? { animation: 'spin-rotate 0.6s linear infinite' } : {}} />
+        </button>
       </div>
 
       {/* 筛选栏 */}
@@ -194,6 +203,9 @@ export default function TeacherScore() {
       </div>
 
       <LiquidCard style={{ padding: 0 }}>
+        <div style={{ padding: '0.5rem 1rem 0', display: 'flex', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.35)' }}>双击成绩可编辑</span>
+        </div>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '3rem 0' }}><p className="text-tertiary">加载中...</p></div>
         ) : pagedScores.length > 0 ? (
@@ -208,7 +220,6 @@ export default function TeacherScore() {
                     <th className="sortable-th" onClick={() => handleSort('exam_stage')}>阶段 <SortIcon field="exam_stage" /></th>
                     <th className="sortable-th" onClick={() => handleSort('score')}>成绩 <SortIcon field="score" /></th>
                     <th className="sortable-th" onClick={() => handleSort('score_date')}>考试日期 <SortIcon field="score_date" /></th>
-                    <th style={{ width: 70 }}>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -221,13 +232,37 @@ export default function TeacherScore() {
                         <td style={{ fontWeight: 500 }}>{stu?.student_name || '--'}</td>
                         <td>{subjName}</td>
                         <td>{score.exam_stage}</td>
-                        <td style={{ fontWeight: 600, color: score.score < 60 ? 'var(--danger)' : 'var(--primary-dark)' }}>{score.score}</td>
-                        <td style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.5)' }}>{score.score_date || '--'}</td>
-                        <td>
-                          <button className="liquid-btn liquid-btn-sm" onClick={() => openEdit(score)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', height: '1.75rem', fontSize: '0.6875rem' }}>
-                            <Pencil size={11} />编辑
-                          </button>
+                        <td
+                          onDoubleClick={() => handleScoreDoubleClick(score)}
+                          style={{
+                            fontWeight: 600,
+                            color: score.score < (SUBJECT_FULL_SCORE[score.subject_id] || 100) * 0.6 ? 'var(--danger)' : 'var(--primary-dark)',
+                            cursor: 'text',
+                            position: editingCell?.scoreId === score.score_id ? 'relative' : undefined,
+                            background: editingCell?.scoreId === score.score_id ? 'rgba(11,101,101,0.03)' : undefined,
+                            boxShadow: editingCell?.scoreId === score.score_id ? 'inset 0 0 0 0.5px rgba(11,101,101,0.2), 0 0 0 2px rgba(11,101,101,0.06)' : undefined,
+                          }}
+                        >
+                          {editingCell?.scoreId === score.score_id ? (
+                            <input
+                              ref={cellInputRef}
+                              type="number"
+                              value={editingCell.value}
+                              onChange={(e) => setEditingCell(prev => prev ? { ...prev, value: e.target.value } : null)}
+                              onKeyDown={handleCellKeyDown}
+                              onBlur={handleCellSave}
+                              autoFocus
+                              style={{
+                                position: 'absolute', top: 1, left: 1, right: 1, bottom: 1,
+                                padding: '0 0.375rem', fontSize: '0.8125rem', lineHeight: '1.5rem',
+                                border: 'none', borderRadius: '0.125rem', boxSizing: 'border-box',
+                                outline: 'none', zIndex: 1, background: 'rgba(255,255,255,0.6)',
+                                color: 'var(--primary-dark)', fontFamily: 'inherit',
+                              }}
+                            />
+                          ) : score.score}
                         </td>
+                        <td style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.5)' }}>{score.score_date || '--'}</td>
                       </tr>
                     );
                   })}
@@ -243,45 +278,12 @@ export default function TeacherScore() {
             )}
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-            <BookOpen size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+            <BookOpen size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} />
             <p className="text-tertiary">{keyword || subjectFilter || stageFilter ? '当前筛选条件下暂无成绩数据' : '暂无成绩数据'}</p>
           </div>
         )}
       </LiquidCard>
-
-      {/* 编辑成绩浮窗 */}
-      {editScore && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={closeEdit}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }} />
-          <div style={{ position: 'relative', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(24px)', border: '0.5px solid rgba(11,101,101,0.08)', borderRadius: 16, padding: '1.75rem', width: 400, maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={closeEdit} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(11,101,101,0.35)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6 }}><X size={18} /></button>
-            <h2 style={{ marginBottom: '1.25rem', fontSize: '1.0625rem' }}>编辑成绩</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.25rem', marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(11,101,101,0.03)', borderRadius: 10, fontSize: '0.8125rem', color: 'rgba(11,101,101,0.65)' }}>
-              <span>学生: <strong style={{ color: '#095050' }}>{getStudentInfo(editScore.student_id)?.student_name || editScore.student_id}</strong></span>
-              <span>科目: <strong style={{ color: '#095050' }}>{SUBJECT_MAP[editScore.subject_id] || editScore.subject_id}</strong></span>
-              <span>阶段: <strong style={{ color: '#095050' }}>{editScore.exam_stage}</strong></span>
-              <span>当前分数: <strong style={{ color: 'var(--primary)' }}>{editScore.score}</strong></span>
-            </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(11,101,101,0.45)', marginBottom: '0.375rem' }}>新分数</label>
-              <input className="liquid-input" type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSave()} style={{ width: '100%' }} autoFocus />
-            </div>
-            {editMsg && (
-              <div className={'liquid-alert liquid-alert-' + (editMsg.type === 'error' ? 'error' : 'success')} style={{ marginBottom: '0.75rem' }}>
-                {editMsg.type === 'error' ? <X size={16} /> : <Check size={16} />}{editMsg.text}
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              <button className="liquid-btn" onClick={closeEdit}>取消</button>
-              <button className="liquid-btn liquid-btn-primary" onClick={handleSave} disabled={editSaving}>
-                {editSaving ? <Loader size={14} style={{ animation: 'spin-rotate 0.8s linear infinite' }} /> : <Check size={14} />}
-                保存
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <style>{'@keyframes spin-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }'}</style>
     </div>

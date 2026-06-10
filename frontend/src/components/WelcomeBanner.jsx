@@ -1,16 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Database, Clock, BarChart, ShieldAlert } from 'lucide-react';
+import { GraduationCap, User, Users, Database, Clock, BarChart, ShieldAlert, BookOpen } from 'lucide-react';
 
 /* 管理员专属面性盾牌图标 */
 function AdminShieldIcon({ size = 28, style }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
-      {/* 盾牌主体 */}
       <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" fill="var(--primary)" />
-      {/* 内层盾牌轮廓 */}
       <path d="M12 4.5L5.5 8.2v3.8c0 4.2 2.8 8.1 6.5 9.1 3.7-1 6.5-4.9 6.5-9.1V8.2L12 4.5z" fill="rgba(255,255,255,0.1)" />
-      {/* 对勾 */}
       <path d="M9 12.5l2 2 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </svg>
   );
@@ -24,9 +21,9 @@ const ADMIN_SHORTCUTS = [
 
 /* 教师快捷入口配置 */
 const TEACHER_SHORTCUTS = [
-  { label: '学情概览', path: '/teacher/overview', icon: BarChart },
+  { label: '学生详情', path: '/teacher/student', icon: Users },
   { label: '风险预警', path: '/teacher/alert', icon: ShieldAlert },
-  { label: '成绩管理', path: '/teacher/score', icon: Database },
+  { label: '成绩管理', path: '/teacher/score', icon: BookOpen },
 ];
 
 const ROLE_CONFIG = {
@@ -71,7 +68,7 @@ export default function WelcomeBanner({ role, title, subtitle, stats, decoration
 
   return (
     <div
-      className={`welcome-banner${decoration === 'admin' ? ' welcome-banner--admin' : ''}`}
+      className={`welcome-banner${decoration === 'admin' ? ' welcome-banner--admin' : ''}${decoration === 'teacher' ? ' welcome-banner--teacher' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -127,8 +124,8 @@ export default function WelcomeBanner({ role, title, subtitle, stats, decoration
         </div>
       )}
 
-      {/* 右侧快捷统计（非管理员） */}
-      {stats && stats.length > 0 && (
+      {/* 右侧快捷统计（非管理员 & 非教师） */}
+      {stats && stats.length > 0 && decoration !== 'admin' && decoration !== 'teacher' && (
         <div className="welcome-banner-stats">
           {stats.map((stat, i) => (
             <div key={i} className="welcome-banner-stat-pill" style={{

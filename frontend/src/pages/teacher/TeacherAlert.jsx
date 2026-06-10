@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, CheckCircle, RefreshCw, Square, CheckSquare, Sparkles, GraduationCap, BookOpen } from 'lucide-react';
+import { ShieldAlert, Clock, CheckCircle2, Loader, X, Pencil, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, CheckCircle, RefreshCw, Square, CheckSquare, Sparkles, GraduationCap, BookOpen, Zap } from 'lucide-react';
 import LiquidCard from '../../components/LiquidCard';
 import LiquidSelect from '../../components/LiquidSelect';
 import ChartTooltip from '../../components/ChartTooltip';
@@ -46,12 +46,16 @@ export default function TeacherAlert() {
   const [interveneMeasure, setInterveneMeasure] = useState('');
   const [interveneMsg, setInterveneMsg] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [editingCell, setEditingCell] = useState(null); // { alertId, field, value }
+  const cellInputRef = useRef(null);
   const [studentSummary, setStudentSummary] = useState(null);
   const [batchMsg, setBatchMsg] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchAlerts = useCallback(async () => {
+  const fetchAlerts = useCallback(async (silent = false) => {
     if (!classId) { setAlerts([]); setAlertStats(null); setLoading(false); return; }
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const params = { class_id: classId };
       if (riskFilter) params.risk_level = riskFilter;
@@ -61,16 +65,16 @@ export default function TeacherAlert() {
       setAlerts(Array.isArray(alertsRes.data) ? alertsRes.data : []);
       setAlertStats(statsRes.data);
     } catch (err) { console.error('获取预警数据失败:', err); }
-    finally { setLoading(false); setRefreshing(false); }
+    finally { if (!silent) setLoading(false); setRefreshing(false); setLastUpdated(new Date()); }
   }, [riskFilter, statusFilter, classId]);
 
   useEffect(() => { fetchAlerts(); }, [fetchAlerts, refreshKey]);
 
   useEffect(() => {
     if (!classId) return;
-    refreshTimerRef.current = setInterval(() => { setRefreshKey(k => k + 1); setRefreshing(true); }, 30000);
+    refreshTimerRef.current = setInterval(() => { setRefreshing(true); fetchAlerts(true); }, 30000);
     return () => { if (refreshTimerRef.current) clearInterval(refreshTimerRef.current); };
-  }, [classId]);
+  }, [classId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -159,6 +163,40 @@ export default function TeacherAlert() {
     setSelectedIds(new Set()); setTimeout(() => setBatchMsg(null), 4000);
   };
 
+  const handleCellDoubleClick = (alertId, field, value) => {
+    setEditingCell({ alertId, field, value: String(value ?? '') });
+  };
+
+  const handleCellSave = async () => {
+    if (!editingCell) return;
+    await handleCellSaveWithValue(editingCell);
+  };
+
+  const handleCellSaveWithValue = async (cellData) => {
+    if (!cellData) return;
+    const { alertId, field, value: newValue } = cellData;
+    const alert = alerts.find(a => a.alert_id === alertId);
+    if (!alert) { setEditingCell(null); return; }
+    if (String(alert[field] ?? '') === String(newValue)) { setEditingCell(null); return; }
+    try {
+      await updateIntervention(alertId, {
+        [field]: newValue,
+        operator_role: 'teacher',
+        operator_name: selectedTeacherName || '',
+        operator_id: selectedTeacherId || '',
+      });
+      setAlerts(prev => prev.map(a => a.alert_id === alertId ? { ...a, [field]: newValue } : a));
+    } catch (err) {
+      console.error('更新失败:', err);
+    }
+    setEditingCell(null);
+  };
+
+  const handleCellKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleCellSave(); }
+    else if (e.key === 'Escape') { setEditingCell(null); }
+  };
+
   if (!classId) {
     return (
       <div className="home-page">
@@ -170,7 +208,7 @@ export default function TeacherAlert() {
           </div>
           <h1 style={{ margin: 0 }}>风险预警</h1>
         </div>
-        <LiquidCard><div style={{ textAlign: 'center', padding: '3rem 0' }}><ShieldAlert size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} /><p className="text-tertiary">请先选择班级</p></div></LiquidCard>
+        <LiquidCard><div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}><ShieldAlert size={40} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} /><p className="text-tertiary">请先选择班级</p></div></LiquidCard>
       </div>
     );
   }
@@ -188,8 +226,13 @@ export default function TeacherAlert() {
         <button className="liquid-btn liquid-btn-sm" onClick={() => { setRefreshKey(k => k + 1); setRefreshing(true); }} disabled={refreshing} style={{ marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }} title="手动刷新">
           <RefreshCw size={12} style={refreshing ? { animation: 'spin-rotate 0.6s linear infinite' } : {}} />
         </button>
+        {lastUpdated && (
+          <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.35)', marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            更新于 {lastUpdated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        )}
         <button className="liquid-btn liquid-btn-sm" onClick={handleGenerate} disabled={generating} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-          {generating ? <Loader size={12} style={{ animation: 'spin-rotate 0.8s linear infinite' }} /> : <RefreshCw size={12} />}
+          {generating ? <Loader size={12} style={{ animation: 'spin-rotate 0.8s linear infinite' }} /> : <Zap size={12} />}
           {generating ? '生成中...' : '重新生成预警'}
         </button>
       </div>
@@ -200,44 +243,38 @@ export default function TeacherAlert() {
         </div>
       )}
 
-      {/* 统计横幅 */}
-      <div className="stat-grid" style={{ marginBottom: '1.25rem' }}>
-        <div className="stat-metric-item"><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(11,101,101,0.08)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ShieldAlert size={15} /></div><div><div className="metric-label">预警总数</div><div className="metric-value">{totalAlerts}</div></div></div></div>
-        <div className="stat-metric-item"><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(192,57,43,0.08)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><AlertTriangle size={15} /></div><div><div className="metric-label">高风险</div><div className="metric-value" style={{ color: 'var(--danger)' }}>{highCount}</div></div></div></div>
-        <div className="stat-metric-item"><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(26,138,90,0.08)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CheckCircle size={15} /></div><div><div className="metric-label">干预率</div><div className="metric-value" style={{ color: 'var(--success)' }}>{interventionRate}</div></div></div></div>
-        <div className="stat-metric-item"><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(201,147,58,0.08)', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Clock size={15} /></div><div><div className="metric-label">平均风险评分</div><div className="metric-value" style={{ color: 'var(--warning)' }}>{avgRiskScore}</div></div></div></div>
-      </div>
-
+      {/* 布局：左侧饼图（含统计卡片） + 右侧表格 */}
       <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
         <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <LiquidCard title="风险分布" style={{ textAlign: 'center' }}>
             {riskData.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: 180, height: 180 }}>
-                  <ResponsiveContainer width={180} height={180}>
+                <div style={{ position: 'relative', width: 200, height: 200 }}>
+                  <ResponsiveContainer width={200} height={200}>
                     <PieChart>
-                      <Pie data={riskData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value" stroke="none">
-                        {riskData.map((entry) => (<Cell key={entry.key} fill={RISK_COLORS[entry.key]} />))}
-                      </Pie>
-                      <Tooltip content={<ChartTooltip />} contentStyle={{ zIndex: 9999 }} />
+                      <Pie data={riskData} cx="50%" cy="50%" innerRadius={50} outerRadius={82} paddingAngle={2} dataKey="value" stroke="none">{riskData.map((e) => <Cell key={e.key} fill={RISK_COLORS[e.key]} />)}</Pie>
+                      <Tooltip content={<ChartTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>{totalAlerts}</span>
-                    <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.45)' }}>预警总数</span>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--primary-dark)', lineHeight: 1.2 }}>{totalAlerts}</span>
+                    <span style={{ fontSize: '0.5625rem', color: 'rgba(11,101,101,0.45)' }}>预警总数</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem', width: '100%' }}>
-                  {riskData.map((entry) => (
-                    <div key={entry.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: RISK_COLORS[entry.key], flexShrink: 0 }} />{entry.name}</span>
-                      <span style={{ fontWeight: 600, color: RISK_COLORS[entry.key] }}>{entry.value}</span>
-                    </div>
-                  ))}
+                  {riskData.map((e) => (<div key={e.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}><span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: RISK_COLORS[e.key], flexShrink: 0 }} />{e.name}</span><span style={{ fontWeight: 600, color: RISK_COLORS[e.key] }}>{e.value}</span></div>))}
                 </div>
               </div>
-            ) : (<p className="text-tertiary" style={{ textAlign: 'center', padding: '1rem 0' }}>暂无数据</p>)}
+            ) : <p className="text-tertiary" style={{ textAlign: 'center', padding: '1rem 0' }}>暂无数据</p>}
           </LiquidCard>
+
+          {/* 四个统计卡片移到饼图下方 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="stat-metric-item" style={{ padding: '0.75rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(192,57,43,0.08)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><AlertTriangle size={15} /></div><div><div className="metric-label">高风险</div><div className="metric-value" style={{ color: 'var(--danger)', fontSize: '1.125rem' }}>{highCount}</div></div></div></div>
+            <div className="stat-metric-item" style={{ padding: '0.75rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(11,101,101,0.08)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ShieldAlert size={15} /></div><div><div className="metric-label">预警总数</div><div className="metric-value" style={{ fontSize: '1.125rem' }}>{totalAlerts}</div></div></div></div>
+            <div className="stat-metric-item" style={{ padding: '0.75rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(26,138,90,0.08)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CheckCircle size={15} /></div><div><div className="metric-label">干预率</div><div className="metric-value" style={{ color: 'var(--success)', fontSize: '1.125rem' }}>{interventionRate}</div></div></div></div>
+            <div className="stat-metric-item" style={{ padding: '0.75rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}><div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(201,147,58,0.08)', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Clock size={15} /></div><div><div className="metric-label">平均风险评分</div><div className="metric-value" style={{ color: 'var(--warning)', fontSize: '1.125rem' }}>{avgRiskScore}</div></div></div></div>
+          </div>
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -245,10 +282,17 @@ export default function TeacherAlert() {
             <LiquidSelect value={riskFilter} onChange={(val) => { setRiskFilter(val); setPage(1); }} options={[{ value: '', label: '全部等级' }, { value: 'high', label: '高风险' }, { value: 'medium', label: '中风险' }, { value: 'low', label: '低风险' }]} style={{ width: 130, flexShrink: 0 }} />
             <LiquidSelect value={statusFilter} onChange={(val) => { setStatusFilter(val); setPage(1); }} options={[{ value: '', label: '全部状态' }, { value: 'pending', label: '待处理' }, { value: 'in_progress', label: '进行中' }, { value: 'completed', label: '已完成' }]} style={{ width: 130, flexShrink: 0 }} />
             <input className="liquid-input" placeholder="搜索姓名/学生ID..." value={searchKeyword} onChange={(e) => { setSearchKeyword(e.target.value); setPage(1); }} style={{ width: 160, fontSize: '0.8125rem', flexShrink: 0 }} />
+            <button
+              className={`liquid-btn liquid-btn-sm${selectMode ? ' liquid-btn-primary' : ''}`}
+              onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedIds(new Set()); }}
+              style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+            >
+              <CheckSquare size={12} />{selectMode ? '退出多选' : '多选'}
+            </button>
             <span className="text-tertiary" style={{ fontSize: '0.75rem', marginLeft: 'auto', whiteSpace: 'nowrap' }}>共 {sortedAlerts.length} 条预警</span>
           </div>
 
-          {selectedIds.size > 0 && (
+          {selectMode && selectedIds.size > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', padding: '0.4375rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(11,101,101,0.03)', border: '0.5px solid rgba(11,101,101,0.06)' }}>
               <CheckSquare size={14} style={{ color: 'var(--primary)' }} />
               <span style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>已选 {selectedIds.size} 条</span>
@@ -266,11 +310,13 @@ export default function TeacherAlert() {
                   <table className="liquid-table">
                     <thead>
                       <tr>
+                        {selectMode && (
                         <th style={{ width: 40, textAlign: 'center', padding: '0.625rem 0.5rem' }}>
                           <span onClick={toggleSelectAll} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                             {allSelectedOnPage ? <CheckSquare size={14} style={{ color: 'var(--primary)' }} /> : someSelectedOnPage ? <Square size={14} style={{ color: 'var(--primary)', opacity: 0.5 }} /> : <Square size={14} style={{ color: 'rgba(11,101,101,0.3)' }} />}
                           </span>
                         </th>
+                        )}
                         <th className="sortable-th" onClick={() => handleSort('student_id')}>学生ID <SortIcon field="student_id" /></th>
                         <th>姓名</th>
                         <th style={{ width: 70 }}>预警次数</th>
@@ -293,18 +339,43 @@ export default function TeacherAlert() {
                         const factorsPreview = factors.slice(0, 2).join('、') || '--';
                         return (
                           <tr key={alert.alert_id}>
+                            {selectMode && (
                             <td style={{ textAlign: 'center', padding: '0.5rem 0.5rem' }} onClick={(e) => e.stopPropagation()}>
                               <span onClick={() => toggleSelect(alert.alert_id)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
                                 {selectedIds.has(alert.alert_id) ? <CheckSquare size={14} style={{ color: 'var(--primary)' }} /> : <Square size={14} style={{ color: 'rgba(11,101,101,0.3)' }} />}
                               </span>
                             </td>
+                            )}
                             <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{alert.student_id}</td>
                             <td style={{ fontWeight: 500 }}>{alert.student_name || '--'}</td>
                             <td style={{ textAlign: 'center' }}><span style={{ fontSize: '0.75rem', fontWeight: 600, color: alertCount > 1 ? 'var(--warning)' : 'rgba(11,101,101,0.4)' }}>{alertCount}</span></td>
                             <td><span className={'risk-badge ' + riskCls}>{riskLabel}</span></td>
                             <td style={{ fontWeight: 600, color: alert.risk_score >= 5 ? 'var(--danger)' : alert.risk_score >= 3 ? 'var(--warning)' : 'var(--primary-dark)' }}>{alert.risk_score ?? '--'}</td>
                             <td><span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.5)' }} title={factors.join('、')}>{factorsPreview}{factors.length > 2 && <span style={{ color: 'rgba(11,101,101,0.3)' }}> +{factors.length - 2}</span>}</span></td>
-                            <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: statusInfo.color }}>{alert.intervention_status === 'completed' ? <CheckCircle2 size={12} /> : alert.intervention_status === 'in_progress' ? <Clock size={12} /> : <ShieldAlert size={12} />}{statusInfo.label}</span></td>
+                            <td
+                              onDoubleClick={() => handleCellDoubleClick(alert.alert_id, 'intervention_status', alert.intervention_status)}
+                              style={{
+                                cursor: 'text',
+                                position: editingCell?.alertId === alert.alert_id && editingCell?.field === 'intervention_status' ? 'relative' : undefined,
+                                background: editingCell?.alertId === alert.alert_id && editingCell?.field === 'intervention_status' ? 'rgba(11,101,101,0.03)' : undefined,
+                                boxShadow: editingCell?.alertId === alert.alert_id && editingCell?.field === 'intervention_status' ? 'inset 0 0 0 0.5px rgba(11,101,101,0.2), 0 0 0 2px rgba(11,101,101,0.06)' : undefined,
+                              }}
+                            >
+                              {editingCell?.alertId === alert.alert_id && editingCell?.field === 'intervention_status' ? (
+                                <LiquidSelect
+                                  value={editingCell.value}
+                                  onChange={(v) => handleCellSaveWithValue({ ...editingCell, value: v })}
+                                  options={[{ value: 'pending', label: '待处理' }, { value: 'in_progress', label: '进行中' }, { value: 'completed', label: '已完成' }]}
+                                  style={{ width: '100%' }}
+                                  triggerStyle={{ fontSize: '0.8125rem', padding: '0.25rem 0.5rem', minHeight: '1.5rem' }}
+                                />
+                              ) : (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: statusInfo.color }}>
+                                  {alert.intervention_status === 'completed' ? <CheckCircle2 size={12} /> : alert.intervention_status === 'in_progress' ? <Clock size={12} /> : <ShieldAlert size={12} />}
+                                  {statusInfo.label}
+                                </span>
+                              )}
+                            </td>
                             <td style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.45)', whiteSpace: 'nowrap' }}>{alert.alert_time ? new Date(alert.alert_time).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--'}</td>
                             <td>
                               <button className="liquid-btn liquid-btn-sm" onClick={() => openInterveneModal(alert)} title="干预操作" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', height: '1.75rem', fontSize: '0.6875rem' }}>
@@ -326,8 +397,8 @@ export default function TeacherAlert() {
                 )}
               </>
             ) : (
-              <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-                <ShieldAlert size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+                <ShieldAlert size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem', display: 'block', paintOrder: 'stroke fill' }} />
                 <p className="text-tertiary">{riskFilter || statusFilter || searchKeyword ? '当前筛选条件下暂无预警记录' : '暂无预警数据，请点击"重新生成预警"'}</p>
               </div>
             )}
@@ -340,14 +411,16 @@ export default function TeacherAlert() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={closeModal}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }} />
           <div className="liquid-scroll" style={{ position: 'relative', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(24px)', border: '0.5px solid rgba(11,101,101,0.08)', borderRadius: 16, padding: '1.75rem', width: 520, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={closeModal} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(11,101,101,0.35)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, transition: 'all 0.15s' }}><X size={18} /></button>
+            <button onClick={closeModal} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(11,101,101,0.35)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, transition: 'all 0.15s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(11,101,101,0.65)'; e.currentTarget.style.background = 'rgba(11,101,101,0.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(11,101,101,0.35)'; e.currentTarget.style.background = 'none'; }}><X size={18} /></button>
             <h2 style={{ marginBottom: '1.25rem', fontSize: '1.0625rem' }}>干预操作</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.25rem', marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(11,101,101,0.03)', borderRadius: 10, fontSize: '0.8125rem', color: 'rgba(11,101,101,0.65)' }}>
-              <span>预警 ID: <strong style={{ color: '#095050' }}>{interveneAlert.alert_id}</strong></span>
-              <span>学生: <strong style={{ color: '#095050' }}>{interveneAlert.student_name || '--'}</strong></span>
+              <span>预警 ID: <strong style={{ color: 'var(--primary-dark)' }}>{interveneAlert.alert_id}</strong></span>
+              <span>学生: <strong style={{ color: 'var(--primary-dark)' }}>{interveneAlert.student_name || '--'}</strong></span>
               <span>风险等级: <span className={'risk-badge ' + (interveneAlert.risk_level === 'high' ? 'risk-high' : interveneAlert.risk_level === 'medium' ? 'risk-medium' : 'risk-low')}>{RISK_LABELS[interveneAlert.risk_level] || interveneAlert.risk_level}</span></span>
               <span>风险评分: <strong style={{ color: interveneAlert.risk_score >= 5 ? 'var(--danger)' : interveneAlert.risk_score >= 3 ? 'var(--warning)' : 'var(--primary-dark)' }}>{interveneAlert.risk_score ?? '--'}</strong></span>
-              <span>预警时间: <strong style={{ color: '#095050' }}>{interveneAlert.alert_time ? new Date(interveneAlert.alert_time).toLocaleString('zh-CN') : '--'}</strong></span>
+              <span>预警时间: <strong style={{ color: 'var(--primary-dark)' }}>{interveneAlert.alert_time ? new Date(interveneAlert.alert_time).toLocaleString('zh-CN') : '--'}</strong></span>
             </div>
             {studentSummary && (
               <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(11,101,101,0.02)', borderRadius: 10, border: '0.5px solid rgba(11,101,101,0.06)' }}>

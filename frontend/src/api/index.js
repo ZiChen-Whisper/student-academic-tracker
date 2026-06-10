@@ -21,6 +21,7 @@ export const getScoreTrend = (id) => api.get(`/scores/trend/${id}`);
 export const getOverview = (params) => api.get('/scores/overview', { params });
 export const getScoreDistribution = (params) => api.get('/scores/distribution', { params });
 export const getClassStats = (params) => api.get('/scores/class-stats', { params });
+export const getClassScores = (params) => api.get('/scores/class-scores', { params });
 
 // NL2SQL
 export const nl2sqlQuery = (question, operatorInfo = {}) => api.post('/nl2sql/query', { question, ...operatorInfo });
