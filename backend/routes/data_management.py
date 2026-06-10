@@ -337,6 +337,7 @@ def get_rows(table_name):
     page = request.args.get('page', 1, type=int)
     page_size = request.args.get('page_size', 50, type=int)
     search = request.args.get('search', '').strip()
+    search_column = request.args.get('search_column', '').strip()
     sort_by = request.args.get('sort_by', '').strip()
     sort_order = request.args.get('sort_order', 'asc').strip().lower()
 
@@ -346,20 +347,30 @@ def get_rows(table_name):
     params = []
     count_params = []
 
-    # 搜索条件：在所有字符串列中模糊匹配
+    # 搜索条件：支持按指定列或全部文本列模糊匹配
     if search:
-        searchable_cols = [
-            col['name'] for col in config['columns']
-            if col['type'] in ('varchar', 'text')
-        ]
-        if searchable_cols:
-            like_parts = [f"{col} LIKE %s" for col in searchable_cols]
+        allowed_cols = {col['name'] for col in config['columns']}
+        if search_column and search_column in allowed_cols:
+            # 按指定列搜索
             search_pattern = f"%{search}%"
-            where_clause = ' OR '.join(like_parts)
-            base_sql += f" WHERE {where_clause}"
-            count_sql += f" WHERE {where_clause}"
-            params.extend([search_pattern] * len(searchable_cols))
-            count_params.extend([search_pattern] * len(searchable_cols))
+            base_sql += f" WHERE {search_column} LIKE %s"
+            count_sql += f" WHERE {search_column} LIKE %s"
+            params.append(search_pattern)
+            count_params.append(search_pattern)
+        else:
+            # 在所有字符串列中模糊匹配
+            searchable_cols = [
+                col['name'] for col in config['columns']
+                if col['type'] in ('varchar', 'text')
+            ]
+            if searchable_cols:
+                like_parts = [f"{col} LIKE %s" for col in searchable_cols]
+                search_pattern = f"%{search}%"
+                where_clause = ' OR '.join(like_parts)
+                base_sql += f" WHERE {where_clause}"
+                count_sql += f" WHERE {where_clause}"
+                params.extend([search_pattern] * len(searchable_cols))
+                count_params.extend([search_pattern] * len(searchable_cols))
 
     # 排序
     allowed_sort_cols = {col['name'] for col in config['columns']}
@@ -615,3 +626,81 @@ def delete_row(table_name, record_id):
     )
 
     return jsonify({'data': {'affected': affected}})
+
+
+# ─── 自定义 SQL 执行端点 ──────────────────────────────────────────
+
+READ_SQL_PREFIXES = ('SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN')
+WRITE_SQL_PREFIXES = ('INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'TRUNCATE', 'RENAME')
+
+
+@data_management_bp.route('/execute-sql', methods=['POST'])
+@admin_required
+def execute_sql():
+    """执行自定义 SQL 语句，查询类直接执行，写操作需二次确认"""
+    data = request.get_json(silent=True)
+    if not data or not data.get('sql'):
+        return jsonify({'error': 'SQL 语句不能为空'}), 400
+
+    sql = data['sql'].strip()
+    if not sql:
+        return jsonify({'error': 'SQL 语句不能为空'}), 400
+
+    # 判断 SQL 类型（取第一个关键字）
+    first_word = sql.split()[0].upper() if sql.split() else ''
+
+    is_read = first_word in READ_SQL_PREFIXES
+    is_write = first_word in WRITE_SQL_PREFIXES
+
+    if not is_read and not is_write:
+        return jsonify({'error': f'不支持的 SQL 类型: {first_word}'}), 400
+
+    # 写操作需要二次确认
+    if is_write:
+        confirmed = data.get('confirmed', False)
+        if not confirmed:
+            return jsonify({
+                'needs_confirm': True,
+                'sql': sql,
+                'type': 'write'
+            })
+
+    import time
+
+    try:
+        start_time = time.time()
+
+        if is_read:
+            rows = query_all(sql)
+            execution_time_ms = round((time.time() - start_time) * 1000, 2)
+            columns = list(rows[0].keys()) if rows else []
+            converted_rows = [_convert_row(row) for row in rows]
+            return jsonify({
+                'type': 'query',
+                'columns': columns,
+                'rows': converted_rows,
+                'row_count': len(converted_rows),
+                'execution_time_ms': execution_time_ms
+            })
+        else:
+            # 写操作
+            affected = execute(sql)
+            execution_time_ms = round((time.time() - start_time) * 1000, 2)
+
+            # 记录变更历史
+            record_change(
+                first_word, '', '',
+                operator='系统管理员',
+                description=f'执行自定义 SQL: {sql[:200]}',
+                change_detail={'sql': sql},
+                operator_role='admin'
+            )
+
+            return jsonify({
+                'type': 'execute',
+                'affected_rows': affected,
+                'execution_time_ms': execution_time_ms
+            })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400

@@ -23,7 +23,7 @@ const NAV_ITEMS = {
     { to: '/teacher', label: '主页', end: true },
     { to: '/teacher/overview', label: '学情概览' },
     { to: '/teacher/student', label: '学生详情' },
-    { to: '/teacher/nl2sql', label: 'AI 查询' },
+    
     { to: '/teacher/alert', label: '风险预警' },
   ],
   student: [

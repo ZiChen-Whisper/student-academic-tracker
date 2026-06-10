@@ -1,5 +1,6 @@
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, BarChart3, UserSearch, Sparkles, ShieldAlert, Clock } from 'lucide-react';
+import { GraduationCap, User, Users, Database, Clock } from 'lucide-react';
 
 /* 管理员专属面性盾牌图标 */
 function AdminShieldIcon({ size = 28, style }) {
@@ -17,10 +18,7 @@ function AdminShieldIcon({ size = 28, style }) {
 
 /* 管理员快捷入口配置 */
 const ADMIN_SHORTCUTS = [
-  { label: '学情概览', path: '/admin/overview', icon: BarChart3 },
-  { label: '学生详情', path: '/admin/student', icon: UserSearch },
-  { label: 'AI 查询', path: '/admin/nl2sql', icon: Sparkles },
-  { label: '风险预警', path: '/admin/alert', icon: ShieldAlert },
+  { label: '数据管理', path: '/admin/data/student', icon: Database },
   { label: '变更历史', path: '/admin/history', icon: Clock },
 ];
 
@@ -45,9 +43,34 @@ export default function WelcomeBanner({ role, title, subtitle, stats, decoration
   const Icon = config.icon;
   const greeting = getGreeting();
   const navigate = useNavigate();
+  const [mousePos, setMousePos] = useState(null);
+
+  const handleMouseMove = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setMousePos(null);
+  }, []);
+
+  // 跟随鼠标的变暗径向渐变（使用主题色深色，更淡）
+  const darkOverlay = mousePos
+    ? `radial-gradient(circle 200px at ${mousePos.x}px ${mousePos.y}px, rgba(9,80,80,0.06) 0%, rgba(9,80,80,0.02) 40%, transparent 70%)`
+    : 'none';
 
   return (
-    <div className={`welcome-banner${decoration === 'admin' ? ' welcome-banner--admin' : ''}`}>
+    <div
+      className={`welcome-banner${decoration === 'admin' ? ' welcome-banner--admin' : ''}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* 跟随鼠标的变暗遮罩 */}
+      <div className="welcome-banner-dark-overlay" style={{ background: darkOverlay }} />
+
       {/* 装饰光晕 */}
       <div className="welcome-banner-orb" />
 

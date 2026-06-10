@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Clock, Database, Plus, Pencil, Trash2, ChevronDown, User, Code, Copy, Check, FileText, FileJson, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import LiquidCard from '../../components/LiquidCard';
 import { getChangeHistory } from '../../api';
@@ -180,6 +181,7 @@ function highlightSQL(sql) {
 function CopyButton({ item, useChinese = true }) {
   const [copiedFormat, setCopiedFormat] = useState(null);
   const [hovered, setHovered] = useState(false);
+  const btnRef = useRef(null);
 
   const labelKey = (key, labelMap) => useChinese ? (labelMap[key] || key) : key;
 
@@ -270,6 +272,18 @@ function CopyButton({ item, useChinese = true }) {
     }
   };
 
+  // 计算下拉菜单位置
+  const getDropdownStyle = () => {
+    if (!btnRef.current) return {};
+    const rect = btnRef.current.getBoundingClientRect();
+    return {
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.right - 80,
+      zIndex: 10001,
+    };
+  };
+
   return (
     <div
       style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
@@ -277,6 +291,7 @@ function CopyButton({ item, useChinese = true }) {
       onMouseLeave={() => { setHovered(false); setCopiedFormat(null); }}
     >
       <button
+        ref={btnRef}
         className="liquid-btn liquid-btn-sm"
         onClick={(e) => handleCopy(formats[0], e)}
         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.6875rem', padding: '0.1875rem 0.4375rem' }}
@@ -285,8 +300,8 @@ function CopyButton({ item, useChinese = true }) {
         {copiedFormat === 'json' ? '已复制' : '复制'}
         <ChevronDown size={10} style={{ color: 'rgba(11,101,101,0.35)', transition: 'transform 0.2s ease', transform: hovered ? 'rotate(180deg)' : 'rotate(0deg)' }} />
       </button>
-      {hovered && (
-        <div className="copy-dropdown">
+      {hovered && typeof document !== 'undefined' && createPortal(
+        <div style={getDropdownStyle()} className="copy-dropdown">
           {formats.map((fmt) => {
             const Icon = fmt.icon;
             return (
@@ -309,7 +324,8 @@ function CopyButton({ item, useChinese = true }) {
               </div>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -423,7 +439,7 @@ export default function AdminChangeHistory() {
                             </span>
                           </td>
                           <td style={{ verticalAlign: 'middle' }}>
-                            <span style={{ fontSize: '0.6875rem', padding: '0.0625rem 0.375rem', borderRadius: '0.25rem', background: 'rgba(11,101,101,0.04)', color: 'rgba(11,101,101,0.6)', verticalAlign: 'middle' }}>
+                            <span style={{ fontSize: '0.6875rem', padding: '0.0625rem 0.375rem', borderRadius: '0.5rem', background: 'rgba(11,101,101,0.04)', color: 'rgba(11,101,101,0.6)', verticalAlign: 'middle' }}>
                               {item.table_label}
                             </span>
                           </td>
@@ -478,12 +494,12 @@ export default function AdminChangeHistory() {
                                       <button
                                         className={`liquid-tab ${detailLang === 'zh' ? 'active' : ''}`}
                                         onClick={(e) => { e.stopPropagation(); setDetailLang('zh'); }}
-                                        style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', background: detailLang === 'zh' ? 'rgba(255,255,255,0.75)' : 'transparent', color: detailLang === 'zh' ? 'var(--primary)' : 'rgba(11,101,101,0.45)', fontWeight: detailLang === 'zh' ? 600 : 400, boxShadow: detailLang === 'zh' ? '0 0.5px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(11,101,101,0.06)' : 'none', transition: 'all 0.2s ease' }}
+                                        style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', background: detailLang === 'zh' ? 'rgba(255,255,255,0.75)' : 'transparent', color: detailLang === 'zh' ? 'var(--primary)' : 'rgba(11,101,101,0.45)', fontWeight: detailLang === 'zh' ? 600 : 400, boxShadow: detailLang === 'zh' ? '0 0.5px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(11,101,101,0.06)' : 'none', transition: 'all 0.2s ease' }}
                                       >中文</button>
                                       <button
                                         className={`liquid-tab ${detailLang === 'en' ? 'active' : ''}`}
                                         onClick={(e) => { e.stopPropagation(); setDetailLang('en'); }}
-                                        style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', background: detailLang === 'en' ? 'rgba(255,255,255,0.75)' : 'transparent', color: detailLang === 'en' ? 'var(--primary)' : 'rgba(11,101,101,0.45)', fontWeight: detailLang === 'en' ? 600 : 400, boxShadow: detailLang === 'en' ? '0 0.5px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(11,101,101,0.06)' : 'none', transition: 'all 0.2s ease' }}
+                                        style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', background: detailLang === 'en' ? 'rgba(255,255,255,0.75)' : 'transparent', color: detailLang === 'en' ? 'var(--primary)' : 'rgba(11,101,101,0.45)', fontWeight: detailLang === 'en' ? 600 : 400, boxShadow: detailLang === 'en' ? '0 0.5px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(11,101,101,0.06)' : 'none', transition: 'all 0.2s ease' }}
                                       >EN</button>
                                     </div>
                                   </div>

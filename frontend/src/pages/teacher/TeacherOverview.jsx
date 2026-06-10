@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area,
-} from 'recharts';
-
-// 科目满分映射
-const SUBJECT_FULL_SCORE = {
-  SUBJ_MATH: 20,
-  SUBJ_PORTUGUESE: 20,
-  SUBJ_GENERAL: 100,
-};
-import MetricCard from '../../components/MetricCard';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import { Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart3 } from 'lucide-react';
 import LiquidCard from '../../components/LiquidCard';
 import ChartTooltip from '../../components/ChartTooltip';
 import ChartFilterBtn from '../../components/ChartFilterBtn';
 import { useRole } from '../../contexts/RoleContext';
 import { getOverview, getScoreDistribution, getClassStats, getAlertStats } from '../../api';
+
+const SUBJECT_FULL_SCORE = {
+  SUBJ_MATH: 20,
+  SUBJ_PORTUGUESE: 20,
+  SUBJ_GENERAL: 100,
+};
 
 const SUBJECT_MAP = {
   SUBJ_GENERAL: '综合',
@@ -50,25 +46,23 @@ export default function TeacherOverview() {
   const [alertStats, setAlertStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [distSubject, setDistSubject] = useState('SUBJ_GENERAL');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     const params = classId ? { class_id: classId } : {};
     Promise.all([getOverview(params), getScoreDistribution({ subject_id: 'SUBJ_GENERAL', granularity: 1, ...params }), getClassStats(params), getAlertStats(params)])
       .then(([ovRes, distRes, csRes, alRes]) => {
         setOverview(ovRes.data);
-        // distribution API 返回 { value: [{ count, score_range }], Count } 或直接数组
         const distData = distRes.data?.value || distRes.data?.data || (Array.isArray(distRes.data) ? distRes.data : []);
         setDistribution(distData);
         setClassStats(csRes.data?.data || (Array.isArray(csRes.data) ? csRes.data : []));
         setAlertStats(alRes.data);
+        setLastUpdated(new Date());
       })
-      .catch((err) => {
-        console.error('获取学情概览数据失败:', err);
-      })
+      .catch((err) => { console.error('获取学情概览数据失败:', err); })
       .finally(() => setLoading(false));
   }, [classId]);
 
-  // 科目切换时重新请求成绩分布
   useEffect(() => {
     if (loading) return;
     const params = classId ? { class_id: classId } : {};
@@ -80,17 +74,11 @@ export default function TeacherOverview() {
       .catch((err) => console.error('获取成绩分布失败:', err));
   }, [distSubject, classId, loading]);
 
-  // 计算及格率：基于得分率>=60%（20分制>=12分，100分制>=60分）
   const passRate = (() => {
     if (!classStats.length) return '--';
-    let totalPass = 0;
-    let totalStudents = 0;
+    let totalPass = 0, totalStudents = 0;
     classStats.forEach((item) => {
       const count = item.student_count || 0;
-      const fullScore = SUBJECT_FULL_SCORE[item.subject_id] || 100;
-      const passLine = fullScore * 0.6;
-      const avgScore = item.avg_score || 0;
-      // 使用后端返回的 pass_rate（已按科目分制区分及格线）
       const rate = (item.pass_rate || 0) / 100;
       totalPass += count * rate;
       totalStudents += count;
@@ -99,7 +87,6 @@ export default function TeacherOverview() {
     return ((totalPass / totalStudents) * 100).toFixed(1) + '%';
   })();
 
-  // 各科目得分率：按科目聚合加权平均后换算为得分率
   const subjectScoreRateData = (() => {
     const map = {};
     classStats.forEach((item) => {
@@ -112,17 +99,10 @@ export default function TeacherOverview() {
       const fullScore = SUBJECT_FULL_SCORE[key] || 100;
       const avgScore = val.totalCount ? +(val.totalScore / val.totalCount).toFixed(1) : 0;
       const scoreRate = +(avgScore / fullScore * 100).toFixed(1);
-      return {
-        subject: SUBJECT_MAP[key] || key,
-        subjectId: key,
-        avgScore,
-        fullScore,
-        scoreRate,
-      };
+      return { subject: SUBJECT_MAP[key] || key, subjectId: key, avgScore, fullScore, scoreRate };
     });
   })();
 
-  // 风险等级分布饼图数据
   const riskData = (() => {
     if (!alertStats) return [];
     const stats = alertStats.stats || alertStats;
@@ -132,124 +112,131 @@ export default function TeacherOverview() {
       { name: RISK_LABELS.high, value: stats.high || 0, key: 'high' },
     ].filter((d) => d.value > 0);
   })();
-
-  // 预警总数
   const totalAlerts = riskData.reduce((sum, d) => sum + d.value, 0);
 
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <p className="text-tertiary">加载中...</p>
+        <p className="text-tertiary">加载中..</p>
       </div>
     );
   }
 
   return (
-    <div>
-      {/* 指标卡片 */}
-      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginBottom: '1.25rem' }}>
-        <MetricCard icon="users" label="学生总数" value={overview?.total_students ?? '--'} />
-        <MetricCard icon="trend" label="平均得分率" value={overview?.average_score_rate != null ? Number(overview.average_score_rate).toFixed(1) + '%' : '--'} />
-        <MetricCard icon="alert" label="高风险学生" value={overview?.high_risk_count ?? '--'} color="danger" />
-        <MetricCard icon="check" label="及格率" value={passRate} color="success" />
+    <div className="home-page">
+      <div className="home-orb home-orb--top" />
+      <div className="home-orb home-orb--bottom" />
+
+      {/* 页面标题 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.25rem' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(11,101,101,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <BarChart3 size={18} style={{ color: 'var(--primary)' }} />
+        </div>
+        <h1 style={{ margin: 0 }}>学情概览</h1>
+        {lastUpdated && (
+          <span style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.35)', marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+            <Clock size={10} />
+            更新于 {lastUpdated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        )}
       </div>
 
-      {/* 图表区：各科目平均成绩 + 风险等级分布 */}
+      {/* 指标卡片 - stat-metric-item 风格 */}
+      <div className="stat-grid" style={{ marginBottom: '1.25rem' }}>
+        <div className="stat-metric-item">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(11,101,101,0.08)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Users size={15} />
+            </div>
+            <div>
+              <div className="metric-label">学生总数</div>
+              <div className="metric-value">{overview?.total_students ?? '--'}</div>
+            </div>
+          </div>
+        </div>
+        <div className="stat-metric-item">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(11,101,101,0.08)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TrendingUp size={15} />
+            </div>
+            <div>
+              <div className="metric-label">平均得分率</div>
+              <div className="metric-value">{overview?.average_score_rate != null ? Number(overview.average_score_rate).toFixed(1) + '%' : '--'}</div>
+            </div>
+          </div>
+        </div>
+        <div className="stat-metric-item">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(192,57,43,0.08)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertTriangle size={15} />
+            </div>
+            <div>
+              <div className="metric-label">高风险学生</div>
+              <div className="metric-value" style={{ color: 'var(--danger)' }}>{overview?.high_risk_count ?? '--'}</div>
+            </div>
+          </div>
+        </div>
+        <div className="stat-metric-item">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(26,138,90,0.08)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <CheckCircle size={15} />
+            </div>
+            <div>
+              <div className="metric-label">及格率</div>
+              <div className="metric-value" style={{ color: 'var(--success)' }}>{passRate}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 图表区 */}
       <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', marginBottom: '1.25rem' }}>
-        {/* 各科目得分率 */}
-        <LiquidCard title="各科目得分率">
+        <LiquidCard title="各科得分率">
           {subjectScoreRateData.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem 0' }}>
-              {subjectScoreRateData.map((item) => (
-                <div key={item.subjectId}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#095050' }}>{item.subject}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.5)' }}>
-                      平均 {item.avgScore} / {item.fullScore}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                    <div style={{ flex: 1, height: 20, background: 'rgba(11,101,101,0.06)', borderRadius: 10, overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${item.scoreRate}%`,
-                          background: 'linear-gradient(90deg, #0b6565, rgba(11,101,101,0.5))',
-                          borderRadius: 10,
-                          transition: 'width 0.6s ease',
-                        }}
-                      />
+              {subjectScoreRateData.map((item) => {
+                  const subjectColor = SUBJECT_COLORS[item.subjectId] || '#0b6565';
+                  return (
+                  <div key={item.subjectId}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.375rem' }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#095050' }}>{item.subject}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.5)' }}>平均 {item.avgScore} / {item.fullScore}</span>
                     </div>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0b6565', minWidth: 48, textAlign: 'right' }}>
-                      {item.scoreRate}%
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                      <div style={{ flex: 1, height: 20, background: 'rgba(11,101,101,0.06)', borderRadius: 10, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: item.scoreRate + '%', background: 'linear-gradient(90deg, ' + subjectColor + ', ' + subjectColor + '80)', borderRadius: 10, transition: 'width 0.6s ease' }} />
+                      </div>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, color: subjectColor, minWidth: 48, textAlign: 'right' }}>{item.scoreRate}%</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );})}
             </div>
           ) : (
             <p className="text-tertiary" style={{ textAlign: 'center', padding: '3rem 0' }}>暂无数据</p>
           )}
         </LiquidCard>
 
-        {/* 风险等级分布饼图 */}
         <LiquidCard title="风险等级分布">
           {riskData.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: 220, height: 220 }}>
                 <ResponsiveContainer width={220} height={220}>
                   <PieChart>
-                    <Pie
-                      data={riskData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={90}
-                      paddingAngle={2}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {riskData.map((entry) => (
-                        <Cell key={entry.key} fill={RISK_COLORS[entry.key]} />
-                      ))}
+                    <Pie data={riskData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={2} dataKey="value" stroke="none">
+                      {riskData.map((entry) => (<Cell key={entry.key} fill={RISK_COLORS[entry.key]} />))}
                     </Pie>
                     <Tooltip content={<ChartTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
-                {/* 中心镂空：显示预警总数 */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none',
-                    zIndex: -1,
-                  }}
-                >
-                  <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#095050', lineHeight: 1.2, textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>
-                    {totalAlerts}
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.45)', textShadow: '0 0 8px rgba(255,255,255,0.9)' }}>预警总数</span>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#095050', lineHeight: 1.2 }}>{totalAlerts}</span>
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(11,101,101,0.45)' }}>预警总数</span>
                 </div>
               </div>
-              {/* 底部图例 */}
               <div style={{ display: 'flex', gap: '1.25rem', marginTop: '0.5rem' }}>
                 {riskData.map((entry) => (
                   <div key={entry.key} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}>
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: RISK_COLORS[entry.key],
-                        flexShrink: 0,
-                      }}
-                    />
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: RISK_COLORS[entry.key], flexShrink: 0 }} />
                     {entry.name} {entry.value}
                   </div>
                 ))}
@@ -265,12 +252,7 @@ export default function TeacherOverview() {
       <LiquidCard title="成绩分布">
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
           {Object.entries(SUBJECT_MAP).map(([id, name]) => (
-            <ChartFilterBtn
-              key={id}
-              active={distSubject === id}
-              color={SUBJECT_COLORS[id]}
-              onClick={() => setDistSubject(id)}
-            >
+            <ChartFilterBtn key={id} active={distSubject === id} color={SUBJECT_COLORS[id]} onClick={() => setDistSubject(id)}>
               {name}
             </ChartFilterBtn>
           ))}
@@ -285,32 +267,10 @@ export default function TeacherOverview() {
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} vertical={false} />
-              <XAxis
-                dataKey="score"
-                type="number"
-                domain={[0, SUBJECT_FULL_SCORE[distSubject] || 100]}
-                tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
-                axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
-                tickLine={false}
-                label={{ value: '分数', position: 'insideBottomRight', offset: -4, fill: 'rgba(11,101,101,0.4)', fontSize: 12 }}
-                ticks={distSubject === 'SUBJ_GENERAL' ? [0, 20, 40, 60, 80, 100] : [0, 5, 10, 15, 20]}
-              />
-              <YAxis
-                tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
-                axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
-                tickLine={false}
-                label={{ value: '人数', angle: -90, position: 'insideTopLeft', offset: 16, fill: 'rgba(11,101,101,0.4)', fontSize: 12 }}
-              />
-              <Tooltip content={<ChartTooltip />} labelFormatter={(label) => `分数: ${label}`} />
-              <Area
-                type="monotone"
-                dataKey="count"
-                name="人数"
-                stroke="#0b6565"
-                strokeWidth={2}
-                fill="url(#areaGradient)"
-                dot={false}
-              />
+              <XAxis dataKey="score" type="number" domain={[0, SUBJECT_FULL_SCORE[distSubject] || 100]} tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }} axisLine={{ stroke: 'rgba(11,101,101,0.08)' }} tickLine={false} label={{ value: '分数', position: 'insideBottomRight', offset: -4, fill: 'rgba(11,101,101,0.4)', fontSize: 12 }} ticks={distSubject === 'SUBJ_GENERAL' ? [0, 20, 40, 60, 80, 100] : [0, 5, 10, 15, 20]} />
+              <YAxis tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }} axisLine={{ stroke: 'rgba(11,101,101,0.08)' }} tickLine={false} label={{ value: '人数', angle: -90, position: 'insideTopLeft', offset: 16, fill: 'rgba(11,101,101,0.4)', fontSize: 12 }} />
+              <Tooltip content={<ChartTooltip />} labelFormatter={(label) => '分数: ' + label} />
+              <Area type="monotone" dataKey="count" name="人数" stroke="#0b6565" strokeWidth={2} fill="url(#areaGradient)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
