@@ -14,6 +14,7 @@ export const searchStudents = (params) => api.get('/students/search', { params }
 export const getTeachers = () => api.get('/teachers/');
 export const searchTeachers = (params) => api.get('/teachers/search', { params });
 export const getTeacherClasses = (id) => api.get(`/teachers/${id}/classes`);
+export const getTeacherStats = (params) => api.get('/teachers/stats', { params });
 
 // 成绩相关
 export const getScoreTrend = (id) => api.get(`/scores/trend/${id}`);

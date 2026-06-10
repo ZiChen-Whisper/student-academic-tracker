@@ -8,7 +8,6 @@ import TableViewer from './components/TableViewer';
 import TeacherHome from './pages/teacher/TeacherHome';
 import TeacherOverview from './pages/teacher/TeacherOverview';
 import TeacherStudent from './pages/teacher/TeacherStudent';
-import TeacherNL2SQL from './pages/teacher/TeacherNL2SQL';
 import TeacherAlert from './pages/teacher/TeacherAlert';
 import StudentHome from './pages/StudentHome';
 import StudentView from './pages/StudentView';
@@ -49,7 +48,6 @@ function App() {
             <Route path="teacher" element={<TeacherHome />} />
             <Route path="teacher/overview" element={<TeacherOverview />} />
             <Route path="teacher/student" element={<TeacherStudent />} />
-            <Route path="teacher/nl2sql" element={<TeacherNL2SQL />} />
             <Route path="teacher/alert" element={<TeacherAlert />} />
 
             {/* 学生视角 */}

@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Database, User, GraduationCap, School, Calendar, BarChart3, Activity, Home, AlertTriangle, Lightbulb, FileText, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Database, User, GraduationCap, School, Calendar, BarChart3, Activity, Home, AlertTriangle, Lightbulb, FileText, ChevronLeft, ChevronRight, ChevronDown, Terminal, Sparkles, RefreshCw } from 'lucide-react';
 import TableViewer from '../../components/TableViewer';
+import LiquidTooltip, { useLiquidTooltip } from '../../components/LiquidTooltip';
+import SqlEditorModal from '../../components/SqlEditorModal';
+import AiQueryModal from '../../components/AiQueryModal';
+
+// 数据刷新上下文
+const DataRefreshContext = createContext(null);
+export const useDataRefresh = () => useContext(DataRefreshContext);
 
 const SUB_PAGES = [
   { to: '/admin/data/student', label: '学生信息', icon: User },
@@ -60,8 +67,39 @@ export function CoursePage() {
 
 export default function AdminDataManagement() {
   const [collapsed, setCollapsed] = useState(false);
+  const [sqlModalOpen, setSqlModalOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { tooltip, showTooltip, hideTooltip, moveTooltip } = useLiquidTooltip();
+
+  // 数据刷新相关状态
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    setRefreshKey(k => k + 1);
+    setLastUpdated(new Date());
+    setTimeout(() => setRefreshing(false), 600);
+  }, []);
+
+  // 自动刷新：每30秒
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRefreshKey(k => k + 1);
+      setLastUpdated(new Date());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 初始化更新时间
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, []);
+
+  const refreshContext = { refreshKey, handleRefresh, refreshing };
 
   // 初始化展开状态：如果当前路径匹配某个子项，自动展开其父组
   const [expandedGroups, setExpandedGroups] = useState(() => {
@@ -116,13 +154,47 @@ export default function AdminDataManagement() {
           <Database size={18} style={{ color: 'var(--primary)' }} />
         </div>
         <h1 style={{ margin: 0 }}>数据管理</h1>
+        {lastUpdated && (
+          <span style={{
+            fontSize: '0.6875rem',
+            color: 'rgba(11,101,101,0.35)',
+            marginLeft: '0.25rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+          }}>
+            更新于 {lastUpdated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        )}
+        <button
+          onClick={handleRefresh}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 26,
+            height: 26,
+            border: 'none',
+            borderRadius: '0.375rem',
+            background: 'rgba(11,101,101,0.04)',
+            color: 'rgba(11,101,101,0.4)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            marginLeft: '0.125rem',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; showTooltip('刷新数据', e); }}
+          onMouseMove={moveTooltip}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.4)'; hideTooltip(); }}
+        >
+          <RefreshCw size={12} style={{ transition: 'transform 0.3s ease', transform: refreshing ? 'rotate(360deg)' : 'none' }} />
+        </button>
       </div>
 
       {/* 主体：侧边栏 + 内容区 */}
       <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
         {/* 侧边栏 */}
         <div style={{
-          width: collapsed ? 48 : 180,
+          width: collapsed ? 48 : 160,
           flexShrink: 0,
           position: 'sticky',
           top: 'calc(52px + 1.5rem)',
@@ -138,6 +210,7 @@ export default function AdminDataManagement() {
           display: 'flex',
           flexDirection: 'column',
           maxHeight: 'calc(100vh - 52px - 3rem)',
+          whiteSpace: 'nowrap',
         }}>
           {/* 顶部高光线 */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -185,14 +258,16 @@ export default function AdminDataManagement() {
                           e.currentTarget.style.background = 'rgba(11,101,101,0.05)';
                           e.currentTarget.style.color = 'var(--primary)';
                         }
+                        if (collapsed) showTooltip(item.label, e);
                       }}
+                      onMouseMove={(e) => { if (collapsed) moveTooltip(e); }}
                       onMouseLeave={(e) => {
                         if (!isParentActive) {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'rgba(11,101,101,0.6)';
                         }
+                        hideTooltip();
                       }}
-                      title={collapsed ? item.label : undefined}
                     >
                       <Icon size={14} style={{ flexShrink: 0 }} />
                       {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
@@ -307,14 +382,16 @@ export default function AdminDataManagement() {
                       e.currentTarget.style.background = 'rgba(11,101,101,0.05)';
                       e.currentTarget.style.color = 'var(--primary)';
                     }
+                    if (collapsed) showTooltip(item.label, e);
                   }}
+                  onMouseMove={(e) => { if (collapsed) moveTooltip(e); }}
                   onMouseLeave={(e) => {
                     if (!e.currentTarget.classList.contains('data-nav-item-active')) {
                       e.currentTarget.style.background = 'transparent';
                       e.currentTarget.style.color = 'rgba(11,101,101,0.6)';
                     }
+                    hideTooltip();
                   }}
-                  title={collapsed ? item.label : undefined}
                 >
                   <Icon size={14} style={{ flexShrink: 0 }} />
                   {!collapsed && <span>{item.label}</span>}
@@ -322,6 +399,124 @@ export default function AdminDataManagement() {
               );
             })}
           </div>
+
+          {/* 工具按钮 */}
+          {!collapsed && (
+            <div style={{
+              flexShrink: 0,
+              marginTop: '0.375rem',
+              paddingTop: '0.375rem',
+              borderTop: '0.5px solid rgba(11,101,101,0.06)',
+              display: 'flex',
+              gap: '0.25rem',
+            }}>
+              <button
+                onClick={() => setSqlModalOpen(true)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.25rem',
+                  height: 28,
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  background: 'rgba(11,101,101,0.04)',
+                  color: 'rgba(11,101,101,0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '0.6875rem',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; showTooltip('自定义 SQL', e); }}
+                onMouseMove={moveTooltip}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.5)'; hideTooltip(); }}
+              >
+                <Terminal size={11} />
+                SQL
+              </button>
+              <button
+                onClick={() => setAiModalOpen(true)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.25rem',
+                  height: 28,
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  background: 'rgba(11,101,101,0.04)',
+                  color: 'rgba(11,101,101,0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '0.6875rem',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; showTooltip('AI 查询', e); }}
+                onMouseMove={moveTooltip}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.5)'; hideTooltip(); }}
+              >
+                <Sparkles size={11} />
+                AI
+              </button>
+            </div>
+          )}
+          {collapsed && (
+            <div style={{
+              flexShrink: 0,
+              marginTop: '0.375rem',
+              paddingTop: '0.375rem',
+              borderTop: '0.5px solid rgba(11,101,101,0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+              alignItems: 'center',
+            }}>
+              <button
+                onClick={() => setSqlModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  border: 'none',
+                  borderRadius: '50%',
+                  background: 'rgba(11,101,101,0.04)',
+                  color: 'rgba(11,101,101,0.4)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; showTooltip('自定义 SQL', e); }}
+                onMouseMove={moveTooltip}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.4)'; hideTooltip(); }}
+              >
+                <Terminal size={12} />
+              </button>
+              <button
+                onClick={() => setAiModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  border: 'none',
+                  borderRadius: '50%',
+                  background: 'rgba(11,101,101,0.04)',
+                  color: 'rgba(11,101,101,0.4)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; showTooltip('AI 查询', e); }}
+                onMouseMove={moveTooltip}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.4)'; hideTooltip(); }}
+              >
+                <Sparkles size={12} />
+              </button>
+            </div>
+          )}
 
           {/* 折叠按钮 - 底部 */}
           <div style={{
@@ -347,9 +542,9 @@ export default function AdminDataManagement() {
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.4)'; }}
-              title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.08)'; e.currentTarget.style.color = 'var(--primary)'; showTooltip(collapsed ? '展开侧边栏' : '折叠侧边栏', e); }}
+              onMouseMove={moveTooltip}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(11,101,101,0.04)'; e.currentTarget.style.color = 'rgba(11,101,101,0.4)'; hideTooltip(); }}
             >
               {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
             </button>
@@ -358,9 +553,14 @@ export default function AdminDataManagement() {
 
         {/* 内容区 */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Outlet />
+          <DataRefreshContext.Provider value={refreshContext}>
+            <Outlet />
+          </DataRefreshContext.Provider>
         </div>
       </div>
+      <LiquidTooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />
+      <SqlEditorModal open={sqlModalOpen} onClose={() => setSqlModalOpen(false)} />
+      <AiQueryModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} />
     </div>
   );
 }
