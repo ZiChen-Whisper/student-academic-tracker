@@ -10,9 +10,10 @@ import TeacherHome from './pages/teacher/TeacherHome';
 import TeacherStudent from './pages/teacher/TeacherStudent';
 import TeacherAlert from './pages/teacher/TeacherAlert';
 import TeacherScore from './pages/teacher/TeacherScore';
-import StudentHome from './pages/StudentHome';
-import StudentView from './pages/StudentView';
-import StudentSuggestions from './pages/StudentSuggestions';
+import StudentHome from './pages/student/StudentHome';
+import StudentScore from './pages/student/StudentScore';
+import StudentAlert from './pages/student/StudentAlert';
+import StudentSuggestions from './pages/student/StudentSuggestions';
 import ParentHome from './pages/ParentHome';
 import ParentView from './pages/ParentView';
 import ParentAlerts from './pages/ParentAlerts';
@@ -53,7 +54,8 @@ function App() {
 
             {/* 学生视角 */}
             <Route path="student-view" element={<StudentHome />} />
-            <Route path="student-view/trends" element={<StudentView />} />
+            <Route path="student-view/scores" element={<StudentScore />} />
+            <Route path="student-view/alerts" element={<StudentAlert />} />
             <Route path="student-view/suggestions" element={<StudentSuggestions />} />
 
             {/* 家长视角 */}
