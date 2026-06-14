@@ -54,4 +54,8 @@ export const createTableRow = (table, data) => api.post(`/admin/data/${table}`, 
 export const updateTableRow = (table, id, data) => api.put(`/admin/data/${table}/${id}`, data, adminHeaders);
 export const deleteTableRow = (table, id) => api.delete(`/admin/data/${table}/${id}`, adminHeaders);
 
+// 家长相关
+export const getParentSummary = (studentId) => api.get(`/parent/summary/${studentId}`);
+export const getFamilyImpact = (studentId) => api.get(`/parent/family-impact/${studentId}`);
+
 export default api;
