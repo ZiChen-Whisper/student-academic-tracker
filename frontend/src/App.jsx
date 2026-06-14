@@ -14,9 +14,10 @@ import StudentHome from './pages/student/StudentHome';
 import StudentScore from './pages/student/StudentScore';
 import StudentAlert from './pages/student/StudentAlert';
 import StudentSuggestions from './pages/student/StudentSuggestions';
-import ParentHome from './pages/ParentHome';
-import ParentView from './pages/ParentView';
-import ParentAlerts from './pages/ParentAlerts';
+import ParentHome from './pages/parent/ParentHome';
+import ParentScore from './pages/parent/ParentScore';
+import ParentAlert from './pages/parent/ParentAlert';
+import ParentSuggestion from './pages/parent/ParentSuggestion';
 
 function App() {
   return (
@@ -59,9 +60,10 @@ function App() {
             <Route path="student-view/suggestions" element={<StudentSuggestions />} />
 
             {/* 家长视角 */}
-            <Route path="parent-view" element={<ParentHome />} />
-            <Route path="parent-view/report" element={<ParentView />} />
-            <Route path="parent-view/alerts" element={<ParentAlerts />} />
+            <Route path="parent" element={<ParentHome />} />
+            <Route path="parent/scores" element={<ParentScore />} />
+            <Route path="parent/alerts" element={<ParentAlert />} />
+            <Route path="parent/suggestions" element={<ParentSuggestion />} />
           </Route>
         </Routes>
       </RoleProvider>

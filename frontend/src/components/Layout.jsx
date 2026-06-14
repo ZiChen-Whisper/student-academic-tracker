@@ -10,7 +10,7 @@ const ROLE_CONFIG = {
   admin: { label: '管理员', icon: Shield, path: '/admin' },
   teacher: { label: '教师', icon: GraduationCap, path: '/teacher' },
   student: { label: '学生', icon: User, path: '/student-view' },
-  parent: { label: '家长', icon: Users, path: '/parent-view' },
+  parent: { label: '家长', icon: Users, path: '/parent' },
 };
 
 // 各角色的导航菜单
@@ -33,9 +33,10 @@ const NAV_ITEMS = {
     { to: '/student-view/suggestions', label: '学习建议' },
   ],
   parent: [
-    { to: '/parent-view', label: '主页' },
-    { to: '/parent-view/report', label: '成绩报告' },
-    { to: '/parent-view/alerts', label: '预警通知' },
+    { to: '/parent', label: '主页' },
+    { to: '/parent/scores', label: '成绩分析' },
+    { to: '/parent/alerts', label: '风险预警' },
+    { to: '/parent/suggestions', label: '学习建议' },
   ],
 };
 
@@ -74,7 +75,7 @@ export default function Layout() {
   useEffect(() => {
     const pathRole = location.pathname.startsWith('/teacher') ? 'teacher'
       : location.pathname.startsWith('/student-view') ? 'student'
-      : location.pathname.startsWith('/parent-view') ? 'parent'
+      : location.pathname.startsWith('/parent') && !location.pathname.startsWith('/parent-view') ? 'parent'
       : location.pathname.startsWith('/admin') ? 'admin'
       : null;
     if (pathRole && pathRole !== role) {

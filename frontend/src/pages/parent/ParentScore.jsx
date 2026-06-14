@@ -4,12 +4,12 @@ import {
   BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ReferenceLine, Cell,
 } from 'recharts';
-import { BookOpen, TrendingUp, ArrowUp, ArrowDown, Minus, BarChart3, User, Target } from 'lucide-react';
+import { BookOpen, TrendingUp, TrendingDown, Minus, User, Target, BarChart3 } from 'lucide-react';
 import LiquidCard from '../../components/LiquidCard';
 import ChartTooltip from '../../components/ChartTooltip';
 import ChartFilterBtn from '../../components/ChartFilterBtn';
 import { useRole } from '../../contexts/RoleContext';
-import { getStudent, getScoreTrend, getClassStats, getScoreDistribution } from '../../api';
+import { getStudent, getScoreTrend, getClassStats, getScoreDistribution, getParentSummary } from '../../api';
 
 const SUBJECT_MAP = { SUBJ_MATH: '数学', SUBJ_PORTUGUESE: '葡萄牙语', SUBJ_GENERAL: '综合' };
 const SUBJECT_COLORS = { SUBJ_MATH: '#0b6565', SUBJ_PORTUGUESE: '#c9933a', SUBJ_GENERAL: '#1a8a5a' };
@@ -19,16 +19,17 @@ const STAGE_ORDER = { G1: 1, G2: 2, G3: 3 };
 const AXIS_TICK = { fill: 'rgba(11,101,101,0.35)', fontSize: 12 };
 const AXIS_LINE = { stroke: 'rgba(11,101,101,0.08)' };
 
-export default function StudentScore() {
+export default function ParentScore() {
   const { selectedStudentId, selectedStudentName } = useRole();
 
   const [studentInfo, setStudentInfo] = useState(null);
   const [scoreData, setScoreData] = useState([]);
   const [classStats, setClassStats] = useState([]);
   const [distributionData, setDistributionData] = useState([]);
+  const [parentSummary, setParentSummary] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 趋势图科目筛选
+  // 趋势图科目筛选（多选）
   const [visibleSubjects, setVisibleSubjects] = useState(['SUBJ_MATH', 'SUBJ_PORTUGUESE', 'SUBJ_GENERAL']);
   // 分布图科目筛选（单选）
   const [distSubject, setDistSubject] = useState('SUBJ_GENERAL');
@@ -37,7 +38,6 @@ export default function StudentScore() {
     if (!selectedStudentId) return;
     setLoading(true);
 
-    // 先获取学生信息以拿到 class_id
     getStudent(selectedStudentId)
       .then((studentRes) => {
         const info = studentRes.data;
@@ -51,12 +51,12 @@ export default function StudentScore() {
           return;
         }
 
-        // 并行获取成绩趋势、班级统计、成绩分布
         Promise.allSettled([
           getScoreTrend(selectedStudentId),
           getClassStats({ class_id: classId }),
           getScoreDistribution({ subject_id: distSubject, class_id: classId, granularity: 1 }),
-        ]).then(([trendRes, statsRes, distRes]) => {
+          getParentSummary(selectedStudentId),
+        ]).then(([trendRes, statsRes, distRes, summaryRes]) => {
           if (trendRes.status === 'fulfilled') {
             setScoreData(trendRes.value.data?.scores || []);
           }
@@ -68,6 +68,9 @@ export default function StudentScore() {
             const raw = distRes.value.data;
             setDistributionData(Array.isArray(raw) ? raw : (raw?.data || []));
           }
+          if (summaryRes.status === 'fulfilled') {
+            setParentSummary(summaryRes.value.data);
+          }
           setLoading(false);
         });
       })
@@ -77,7 +80,7 @@ export default function StudentScore() {
       });
   }, [selectedStudentId, distSubject]);
 
-  // 成绩趋势合并数据：{ exam_stage, SUBJ_MATH: rate, SUBJ_PORTUGUESE: rate, SUBJ_GENERAL: rate }
+  // 成绩趋势合并数据：按阶段聚合各科得分率
   const mergedChartData = useMemo(() => {
     if (!scoreData.length) return [];
     const stages = ['G1', 'G2', 'G3'];
@@ -107,7 +110,6 @@ export default function StudentScore() {
   // 成绩分布图数据处理
   const distributionChartData = useMemo(() => {
     if (!distributionData.length) return [];
-    // distributionData 预期格式: [{ score_range, count }] 或 [{ score, count }]
     return distributionData.map((d) => ({
       score: d.score_range || d.score,
       count: d.count || 0,
@@ -117,14 +119,12 @@ export default function StudentScore() {
   // 学生在分布图中的位置高亮 & 百分位
   const studentScoreInfo = useMemo(() => {
     if (!scoreData.length || !distributionChartData.length) return { highlightScore: null, percentile: null };
-    // 找到当前选中科目的最新成绩
     const subjScores = scoreData
       .filter((s) => s.subject_id === distSubject)
       .sort((a, b) => (STAGE_ORDER[b.exam_stage] || 0) - (STAGE_ORDER[a.exam_stage] || 0));
     const latestScore = subjScores[0]?.score;
     if (latestScore == null) return { highlightScore: null, percentile: null };
 
-    // 计算百分位：分数 <= 学生分数的人数 / 总人数
     let totalStudents = 0;
     let belowOrEqual = 0;
     distributionChartData.forEach((d) => {
@@ -165,23 +165,17 @@ export default function StudentScore() {
     });
 
     // 出勤率 & 学习时长（归一化到 0-100）
-    const attendanceRate = studentInfo?.attendance_rate != null
-      ? +((studentInfo.attendance_rate > 1 ? studentInfo.attendance_rate : studentInfo.attendance_rate * 100)).toFixed(1)
+    const attendanceRate = studentInfo?.behavior?.attendance_rate != null
+      ? +((studentInfo.behavior.attendance_rate > 1 ? studentInfo.behavior.attendance_rate : studentInfo.behavior.attendance_rate * 100)).toFixed(1)
       : 0;
-    const studyHours = studentInfo?.study_hours != null
-      ? Math.min(100, +((studentInfo.study_hours / 40) * 100).toFixed(1)) // 假设 40 小时为满分
+    const studyHours = studentInfo?.behavior?.study_hours != null
+      ? Math.min(100, +((studentInfo.behavior.study_hours / 40) * 100).toFixed(1))
       : 0;
 
-    // 班级出勤率 & 学习时长均值
-    const classAttendance = classStats.length > 0
-      ? (classStats.reduce((sum, s) => sum + (s.avg_attendance_rate || 0), 0) / classStats.length)
-      : 0;
-    const classAttendanceRate = classAttendance > 0
-      ? +(classAttendance > 1 ? classAttendance : classAttendance * 100).toFixed(1)
-      : 0;
-    const classStudyHours = classStats.length > 0
-      ? Math.min(100, +((classStats.reduce((sum, s) => sum + (s.avg_study_hours || 0), 0) / classStats.length / 40) * 100).toFixed(1))
-      : 0;
+    // 班级出勤率 & 学习时长均值（从 parentSummary 获取）
+    const cr = parentSummary?.class_comparison?.behavior_radar;
+    const classAttendanceRate = cr?.attendance ?? 0;
+    const classStudyHours = cr?.study ?? 0;
 
     return [
       { dimension: '数学', student: studentRates.SUBJ_MATH || 0, classAvg: classRates.SUBJ_MATH || 0 },
@@ -190,7 +184,7 @@ export default function StudentScore() {
       { dimension: '出勤率', student: attendanceRate, classAvg: classAttendanceRate },
       { dimension: '学习时长', student: studyHours, classAvg: classStudyHours },
     ];
-  }, [scoreData, classStats, studentInfo]);
+  }, [scoreData, classStats, studentInfo, parentSummary]);
 
   // 成绩明细表数据
   const scoreTableData = useMemo(() => {
@@ -205,13 +199,15 @@ export default function StudentScore() {
         .filter((s) => s.subject_id === subj)
         .sort((a, b) => (STAGE_ORDER[b.exam_stage] || 0) - (STAGE_ORDER[a.exam_stage] || 0))[0];
 
-      const g1Score = g1?.score;
+      const g2Score = g2?.score;
       const g3Score = g3?.score;
       let trend = 'stable';
-      if (g1Score != null && g3Score != null) {
-        if (g3Score > g1Score) trend = 'up';
-        else if (g3Score < g1Score) trend = 'down';
+      if (g2Score != null && g3Score != null) {
+        if (g3Score > g2Score) trend = 'up';
+        else if (g3Score < g2Score) trend = 'down';
       }
+
+      const fullScore = SUBJECT_FULL_SCORE[subj] || 100;
 
       return {
         subject: SUBJECT_MAP[subj],
@@ -221,6 +217,7 @@ export default function StudentScore() {
         g3: g3?.score ?? '--',
         trend,
         classAvg: classStat?.avg_score != null ? Number(classStat.avg_score).toFixed(1) : '--',
+        g3Low: g3Score != null && (g3Score / fullScore * 100) < 60,
       };
     });
   }, [scoreData, classStats]);
@@ -251,7 +248,7 @@ export default function StudentScore() {
           }}>
             <User size={48} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '1rem' }} />
             <p className="text-tertiary" style={{ fontSize: '0.9375rem' }}>
-              请先在右上角选择学生身份
+              请先在右上角选择孩子身份
             </p>
           </div>
         </LiquidCard>
@@ -351,7 +348,6 @@ export default function StudentScore() {
                     {visibleSubjects.map((subj) => {
                       const avgData = classAvgBySubject[subj];
                       if (!avgData) return null;
-                      // 取最新阶段的均值作为参考线
                       const latestStage = ['G3', 'G2', 'G1'].find((s) => avgData[s] != null);
                       const avgRate = latestStage ? avgData[latestStage] : null;
                       if (avgRate == null) return null;
@@ -364,7 +360,7 @@ export default function StudentScore() {
                           strokeWidth={1}
                           strokeOpacity={0.4}
                           label={{
-                            value: `${SUBJECT_MAP[subj]}均值`,
+                            value: `${SUBJECT_MAP[subj]}班级均值`,
                             position: 'right',
                             fill: SUBJECT_COLORS[subj],
                             fontSize: 10,
@@ -411,7 +407,7 @@ export default function StudentScore() {
                   gap: '0.375rem',
                 }}>
                   <Target size={14} style={{ color: 'var(--primary)' }} />
-                  你超过了 <strong style={{ color: 'var(--primary)' }}>{studentScoreInfo.percentile}%</strong> 的同学
+                  你的孩子超过了 <strong style={{ color: 'var(--primary)' }}>{studentScoreInfo.percentile}%</strong> 的同学
                 </div>
               )}
               {distributionChartData.length > 0 ? (
@@ -473,19 +469,19 @@ export default function StudentScore() {
                       axisLine={false}
                     />
                     <Radar
-                      name="我的成绩"
+                      name="我的孩子"
                       dataKey="student"
-                      stroke={SUBJECT_COLORS.SUBJ_GENERAL}
-                      fill={SUBJECT_COLORS.SUBJ_GENERAL}
+                      stroke="#0b6565"
+                      fill="#0b6565"
                       fillOpacity={0.15}
                       strokeWidth={2}
                     />
                     <Radar
                       name="班级均值"
                       dataKey="classAvg"
-                      stroke={SUBJECT_COLORS.SUBJ_MATH}
-                      fill={SUBJECT_COLORS.SUBJ_MATH}
-                      fillOpacity={0.05}
+                      stroke="#c9933a"
+                      fill="#c9933a"
+                      fillOpacity={0.06}
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
                     />
@@ -512,9 +508,9 @@ export default function StudentScore() {
                   <thead>
                     <tr>
                       <th>科目</th>
-                      <th>G1</th>
-                      <th>G2</th>
-                      <th>G3</th>
+                      <th>G1成绩</th>
+                      <th>G2成绩</th>
+                      <th>G3成绩</th>
                       <th>变化趋势</th>
                       <th>班级均值</th>
                     </tr>
@@ -533,12 +529,18 @@ export default function StudentScore() {
                           }} />
                           {row.subject}
                         </td>
-                        <td>{row.g1}</td>
-                        <td>{row.g2}</td>
-                        <td style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>{row.g3}</td>
+                        <td style={typeof row.g1 === 'number' && (row.g1 / (SUBJECT_FULL_SCORE[row.subjectId] || 100) * 100) < 60 ? { color: 'var(--danger)' } : {}}>
+                          {row.g1}
+                        </td>
+                        <td style={typeof row.g2 === 'number' && (row.g2 / (SUBJECT_FULL_SCORE[row.subjectId] || 100) * 100) < 60 ? { color: 'var(--danger)' } : {}}>
+                          {row.g2}
+                        </td>
+                        <td style={{ fontWeight: 600, color: row.g3Low ? 'var(--danger)' : 'var(--primary-dark)' }}>
+                          {row.g3}
+                        </td>
                         <td>
-                          {row.trend === 'up' && <span style={{ color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '0.125rem' }}><ArrowUp size={14} /> 上升</span>}
-                          {row.trend === 'down' && <span style={{ color: 'var(--danger)', display: 'inline-flex', alignItems: 'center', gap: '0.125rem' }}><ArrowDown size={14} /> 下降</span>}
+                          {row.trend === 'up' && <span style={{ color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '0.125rem' }}><TrendingUp size={14} /> 上升</span>}
+                          {row.trend === 'down' && <span style={{ color: 'var(--danger)', display: 'inline-flex', alignItems: 'center', gap: '0.125rem' }}><TrendingDown size={14} /> 下降</span>}
                           {row.trend === 'stable' && <span style={{ color: 'rgba(11,101,101,0.45)', display: 'inline-flex', alignItems: 'center', gap: '0.125rem' }}><Minus size={14} /> 持平</span>}
                         </td>
                         <td style={{ color: 'rgba(11,101,101,0.65)' }}>{row.classAvg}</td>

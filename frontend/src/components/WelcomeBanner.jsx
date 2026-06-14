@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Database, Clock, BarChart, ShieldAlert, BookOpen } from 'lucide-react';
+import { GraduationCap, User, Users, Database, Clock, BarChart, ShieldAlert, BookOpen, Sparkles } from 'lucide-react';
 
 /* 管理员专属面性盾牌图标 */
 function AdminShieldIcon({ size = 28, style }) {
@@ -24,6 +24,13 @@ const TEACHER_SHORTCUTS = [
   { label: '学生详情', path: '/teacher/student', icon: Users },
   { label: '风险预警', path: '/teacher/alert', icon: ShieldAlert },
   { label: '成绩管理', path: '/teacher/score', icon: BookOpen },
+];
+
+/* 学生快捷入口配置 */
+const STUDENT_SHORTCUTS = [
+  { label: '成绩分析', path: '/student-view/scores', icon: BarChart },
+  { label: '风险预警', path: '/student-view/alerts', icon: ShieldAlert },
+  { label: '学习建议', path: '/student-view/suggestions', icon: Sparkles },
 ];
 
 const ROLE_CONFIG = {
@@ -68,7 +75,7 @@ export default function WelcomeBanner({ role, title, subtitle, stats, decoration
 
   return (
     <div
-      className={`welcome-banner${decoration === 'admin' ? ' welcome-banner--admin' : ''}${decoration === 'teacher' ? ' welcome-banner--teacher' : ''}`}
+      className={`welcome-banner${decoration === 'admin' ? ' welcome-banner--admin' : ''}${decoration === 'teacher' ? ' welcome-banner--teacher' : ''}${decoration === 'student' ? ' welcome-banner--student' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -124,8 +131,24 @@ export default function WelcomeBanner({ role, title, subtitle, stats, decoration
         </div>
       )}
 
-      {/* 右侧快捷统计（非管理员 & 非教师） */}
-      {stats && stats.length > 0 && decoration !== 'admin' && decoration !== 'teacher' && (
+      {/* 学生快捷入口 */}
+      {decoration === 'student' && (
+        <div className="welcome-banner-shortcuts">
+          {STUDENT_SHORTCUTS.map((item) => (
+            <button
+              key={item.path}
+              className="welcome-banner-shortcut-btn"
+              onClick={() => navigate(item.path)}
+            >
+              <item.icon size={13} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 右侧快捷统计（非管理员 & 非教师 & 非学生） */}
+      {stats && stats.length > 0 && decoration !== 'admin' && decoration !== 'teacher' && decoration !== 'student' && (
         <div className="welcome-banner-stats">
           {stats.map((stat, i) => (
             <div key={i} className="welcome-banner-stat-pill" style={{

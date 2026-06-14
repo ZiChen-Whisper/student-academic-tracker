@@ -35,7 +35,7 @@ const colorStyles = {
   },
 };
 
-export default function MetricCard({ icon, label, value, color = 'default' }) {
+export default function MetricCard({ icon, label, value, color = 'default', sub }) {
   const Icon = iconMap[icon] || TrendingUp;
   const style = colorStyles[color] || colorStyles.default;
 
@@ -53,6 +53,11 @@ export default function MetricCard({ icon, label, value, color = 'default' }) {
           <div className="metric-value" style={{ color: style.valueColor }}>
             {typeof value === 'string' || typeof value === 'number' ? value : value}
           </div>
+          {sub && (
+            <div style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.5)', lineHeight: 1.4, marginTop: '0.125rem' }}>
+              {sub}
+            </div>
+          )}
         </div>
       </div>
     </div>

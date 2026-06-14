@@ -685,8 +685,23 @@ a:hover {
 .recharts-area:focus,
 .recharts-bar:focus,
 .recharts-line:focus,
-.recharts-default-tooltip:focus {
+.recharts-default-tooltip:focus,
+.recharts-layer:focus,
+.recharts-curve:focus,
+.recharts-dot:focus,
+.recharts-rectangle:focus,
+.recharts-text:focus,
+.recharts-legend-item:focus,
+.recharts-brush:focus,
+.recharts-reference-line:focus,
+.recharts-reference-dot:focus,
+.recharts-active-dot:focus {
   outline: none !important;
+}
+
+/* 阻止 Recharts 点击时出现方框 */
+.recharts-wrapper * {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ----------------------------------------------------------
@@ -1599,11 +1614,23 @@ a:hover {
   backdrop-filter: none;
 }
 
+/* 学生专属：白绿渐变（与管理端一致） */
+.welcome-banner--student {
+  background: linear-gradient(90deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.5) 25%, var(--primary) 100%);
+  border: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 .welcome-banner--admin:hover {
   background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.4) 25%, var(--primary-dark) 100%);
 }
 
 .welcome-banner--teacher:hover {
+  background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.4) 25%, var(--primary-dark) 100%);
+}
+
+.welcome-banner--student:hover {
   background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.4) 25%, var(--primary-dark) 100%);
 }
 
@@ -1617,28 +1644,38 @@ a:hover {
   border-color: rgba(11,101,101,0.15);
 }
 
+.welcome-banner--student .welcome-banner-icon {
+  background: rgba(11,101,101,0.12);
+  border-color: rgba(11,101,101,0.15);
+}
+
 .welcome-banner--admin .welcome-banner-text h1,
-.welcome-banner--teacher .welcome-banner-text h1 {
+.welcome-banner--teacher .welcome-banner-text h1,
+.welcome-banner--student .welcome-banner-text h1 {
   color: var(--primary-dark);
 }
 
 .welcome-banner--admin .welcome-banner-greeting,
-.welcome-banner--teacher .welcome-banner-greeting {
+.welcome-banner--teacher .welcome-banner-greeting,
+.welcome-banner--student .welcome-banner-greeting {
   color: rgba(11,101,101,0.5);
 }
 
 .welcome-banner--admin .welcome-banner-text p,
-.welcome-banner--teacher .welcome-banner-text p {
+.welcome-banner--teacher .welcome-banner-text p,
+.welcome-banner--student .welcome-banner-text p {
   color: rgba(11,101,101,0.55);
 }
 
 .welcome-banner--admin .welcome-banner-orb,
-.welcome-banner--teacher .welcome-banner-orb {
+.welcome-banner--teacher .welcome-banner-orb,
+.welcome-banner--student .welcome-banner-orb {
   background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 40%, transparent 70%);
 }
 
 .welcome-banner--admin::before,
-.welcome-banner--teacher::before {
+.welcome-banner--teacher::before,
+.welcome-banner--student::before {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), rgba(255,255,255,0.3), transparent);
 }
 

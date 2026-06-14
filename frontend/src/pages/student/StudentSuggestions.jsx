@@ -65,6 +65,21 @@ export default function StudentSuggestions() {
       <div className="home-page">
         <div className="home-orb home-orb--top" />
         <div className="home-orb home-orb--bottom" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.25rem' }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'rgba(11,101,101,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Sparkles size={18} style={{ color: 'var(--primary)' }} />
+          </div>
+          <h1 style={{ margin: 0 }}>学习建议</h1>
+          {selectedStudentName && (
+            <span className="text-tertiary" style={{ fontSize: '0.8125rem', marginLeft: '0.25rem' }}>
+              {selectedStudentName}
+            </span>
+          )}
+        </div>
         <LiquidCard>
           <div style={{
             display: 'flex',
@@ -90,9 +105,20 @@ export default function StudentSuggestions() {
 
       {/* 页面标题区 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Sparkles size={20} style={{ color: 'var(--primary)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'rgba(11,101,101,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Sparkles size={18} style={{ color: 'var(--primary)' }} />
+          </div>
           <h1 style={{ margin: 0 }}>学习建议</h1>
+          {selectedStudentName && (
+            <span className="text-tertiary" style={{ fontSize: '0.8125rem', marginLeft: '0.25rem' }}>
+              {selectedStudentName}
+            </span>
+          )}
         </div>
         <button
           className={generating ? 'liquid-btn-ai' : 'liquid-btn liquid-btn-primary'}

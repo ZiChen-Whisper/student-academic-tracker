@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   User, Clock, MessageCircle, TrendingUp, ArrowRight, CalendarClock, BookOpen, Moon,
-  AlertTriangle, CheckCircle, Brain, Home, Wifi, Dumbbell, ShieldAlert, ShieldCheck, HeartPulse,
+  AlertTriangle, CheckCircle, Brain, Dumbbell, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import LiquidCard from '../../components/LiquidCard';
@@ -22,6 +22,7 @@ const RISK_LABELS = { low: '低风险', medium: '中风险', high: '高风险' }
 const FAMILY_VALUE_MAP = {
   'Primary': '小学', 'Middle School': '初中', 'High School': '高中',
   'College': '大学', 'Postgraduate': '研究生', 'None': '无',
+  '小学': '小学', '初中': '初中', '高中': '高中', '大学': '大学', '研究生': '研究生',
   'at_home': '居家', 'health': '医疗', 'other': '其他', 'services': '服务业', 'teacher': '教师',
   'High': '高', 'Medium': '中', 'Low': '低',
   'yes': '是', 'no': '否',
@@ -160,9 +161,6 @@ export default function StudentHome() {
     return FAMILY_VALUE_MAP[val] || val;
   };
 
-  // 数字素养
-  const digitalLiteracy = studentInfo?.behavior?.digital_literacy ?? null;
-
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -175,7 +173,7 @@ export default function StudentHome() {
   if (!selectedStudentId) {
     return (
       <div>
-        <WelcomeBanner role="student" title="同学" subtitle="查看你的成绩趋势与学习数据" />
+        <WelcomeBanner role="student" title="同学" subtitle="查看你的成绩趋势与学习数据" decoration="student" />
         <LiquidCard>
           <div style={{
             display: 'flex',
@@ -217,11 +215,7 @@ export default function StudentHome() {
         role="student"
         title={selectedStudentName}
         subtitle="查看你的成绩趋势与学习数据"
-        stats={[
-          ...(generalScoreRate != null ? [{ value: `${generalScoreRate.toFixed(1)}%`, label: '综合得分率' }] : []),
-          ...(worstRisk ? [{ value: RISK_LABELS[worstRisk], label: '风险等级', color: riskColor }] : []),
-          { value: suggestions.length, label: '学习建议' },
-        ]}
+        decoration="student"
       />
 
       {/* 个人信息条 */}
@@ -307,70 +301,70 @@ export default function StudentHome() {
         </div>
       )}
 
-      {/* 两栏：成绩趋势 + 预警与建议 */}
-      <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', marginBottom: '1.25rem' }}>
-        {/* 成绩趋势 mini chart */}
-        <LiquidCard
-          title="成绩趋势"
-          action={
-            <button className="liquid-btn liquid-btn-sm" onClick={() => navigate('/student-view/trends')}>
-              详细趋势 <ArrowRight size={12} />
-            </button>
-          }
-        >
-          {trendChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={trendChartData} margin={{ top: 4, right: 16, bottom: 4, left: -10 }}>
-                <CartesianGrid stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} vertical={false} />
-                <XAxis
-                  dataKey="exam_stage"
-                  tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
-                  axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
-                  tickLine={false}
+      {/* 成绩趋势 */}
+      <LiquidCard
+        title="成绩趋势"
+        style={{ marginBottom: '1.25rem' }}
+        action={
+          <button className="liquid-btn liquid-btn-sm" onClick={() => navigate('/student-view/scores')}>
+            详细趋势 <ArrowRight size={12} />
+          </button>
+        }
+      >
+        {trendChartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trendChartData} margin={{ top: 4, right: 16, bottom: 4, left: -10 }}>
+              <CartesianGrid stroke="rgba(11,101,101,0.05)" strokeWidth={0.5} vertical={false} />
+              <XAxis
+                dataKey="exam_stage"
+                tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
+                axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
+                axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
+                tickLine={false}
+              />
+              <Tooltip content={<ChartTooltip />} />
+              <Legend
+                formatter={(value) => SUBJECT_MAP[value] || value}
+                wrapperStyle={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}
+              />
+              {Object.keys(SUBJECT_MAP).map((subj, idx) => (
+                <Line
+                  key={subj}
+                  type="monotone"
+                  dataKey={subj}
+                  name={subj}
+                  stroke={SUBJECT_COLORS[subj]}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: SUBJECT_COLORS[subj], stroke: '#fff', strokeWidth: 1.5 }}
+                  activeDot={{ r: 5 }}
+                  strokeDasharray={idx > 0 ? '6 3' : undefined}
+                  connectNulls
                 />
-                <YAxis
-                  tick={{ fill: 'rgba(11,101,101,0.35)', fontSize: 12 }}
-                  axisLine={{ stroke: 'rgba(11,101,101,0.08)' }}
-                  tickLine={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Legend
-                  formatter={(value) => SUBJECT_MAP[value] || value}
-                  wrapperStyle={{ fontSize: '0.75rem', color: 'rgba(11,101,101,0.65)' }}
-                />
-                {Object.keys(SUBJECT_MAP).map((subj, idx) => (
-                  <Line
-                    key={subj}
-                    type="monotone"
-                    dataKey={subj}
-                    name={subj}
-                    stroke={SUBJECT_COLORS[subj]}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: SUBJECT_COLORS[subj], stroke: '#fff', strokeWidth: 1.5 }}
-                    activeDot={{ r: 5 }}
-                    strokeDasharray={idx > 0 ? '6 3' : undefined}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 0' }}>
-              <TrendingUp size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
-              <p className="text-tertiary">暂无成绩趋势数据</p>
-            </div>
-          )}
-        </LiquidCard>
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 0' }}>
+            <TrendingUp size={32} style={{ color: 'rgba(11,101,101,0.12)', marginBottom: '0.75rem' }} />
+            <p className="text-tertiary">暂无成绩趋势数据</p>
+          </div>
+        )}
+      </LiquidCard>
 
-        {/* 预警与建议摘要 */}
-        <LiquidCard
-          title="预警与建议"
-          action={
-            <button className="liquid-btn liquid-btn-sm" onClick={() => navigate('/student-view/suggestions')}>
-              查看全部 <ArrowRight size={12} />
-            </button>
-          }
-        >
+      {/* 预警与建议摘要 */}
+      <LiquidCard
+        title="预警与建议"
+        style={{ marginBottom: '1.25rem' }}
+        action={
+          <button className="liquid-btn liquid-btn-sm" onClick={() => navigate('/student-view/suggestions')}>
+            查看全部 <ArrowRight size={12} />
+          </button>
+        }
+      >
           {/* 预警摘要 */}
           {alertData.length > 0 && (
             <div style={{ marginBottom: '0.75rem' }}>
@@ -495,7 +489,6 @@ export default function StudentHome() {
             </div>
           )}
         </LiquidCard>
-      </div>
 
       {/* 学习行为分析 */}
       {studentInfo?.behavior && (
@@ -510,7 +503,6 @@ export default function StudentHome() {
                   { icon: Moon, label: '睡眠时长', value: `${studentInfo.behavior.sleep_hours ?? '--'}h`, color: (studentInfo.behavior.sleep_hours ?? 8) < 6 ? 'var(--danger)' : 'var(--primary-lighter)', iconBg: (studentInfo.behavior.sleep_hours ?? 8) < 6 ? 'rgba(192,57,43,0.08)' : 'rgba(14,143,143,0.08)' },
                   { icon: Dumbbell, label: '运动时长', value: `${studentInfo.behavior.physical_activity ?? '--'}h`, color: 'var(--success)', iconBg: 'rgba(26,138,90,0.08)' },
                   { icon: Brain, label: '辅导次数', value: `${studentInfo.behavior.tutoring_sessions ?? '--'}次`, color: 'var(--accent)', iconBg: 'rgba(201,147,58,0.08)' },
-                  { icon: Wifi, label: '数字素养', value: digitalLiteracy != null ? translateFamily(digitalLiteracy) : '--', color: 'var(--primary)', iconBg: 'rgba(11,101,101,0.08)' },
                 ].map((item, i) => (
                   <div key={i} className="stat-metric-item">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -529,9 +521,9 @@ export default function StudentHome() {
 
             {/* 雷达图 */}
             {radarData.length > 0 && (
-              <div style={{ flex: '1 1 280px', minWidth: 0 }}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
+              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height={220}>
+                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="65%">
                     <PolarGrid stroke="rgba(11,101,101,0.08)" strokeWidth={0.5} />
                     <PolarAngleAxis
                       dataKey="dimension"
@@ -559,30 +551,6 @@ export default function StudentHome() {
         </LiquidCard>
       )}
 
-      {/* 数字素养与资源 */}
-      <LiquidCard title="数字素养与资源" style={{ marginBottom: '1.25rem' }}>
-        <div className="stat-grid">
-          {[
-            { icon: Wifi, label: '数字素养水平', value: digitalLiteracy != null ? translateFamily(digitalLiteracy) : '--', color: 'var(--primary)', iconBg: 'rgba(11,101,101,0.08)' },
-            { icon: Home, label: '家庭支持', value: familyData ? translateFamily(familyData.home_support) : '--', color: 'var(--success)', iconBg: 'rgba(26,138,90,0.08)' },
-            { icon: BookOpen, label: '母亲教育', value: familyData ? translateFamily(familyData.mother_education) : '--', color: 'var(--accent)', iconBg: 'rgba(201,147,58,0.08)' },
-            { icon: BookOpen, label: '父亲教育', value: familyData ? translateFamily(familyData.father_education) : '--', color: 'var(--accent)', iconBg: 'rgba(201,147,58,0.08)' },
-          ].map((item, i) => (
-            <div key={i} className="stat-metric-item">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: item.iconBg, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <item.icon size={15} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: 'rgba(11,101,101,0.45)', lineHeight: 1.3 }}>{item.label}</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 700, color: item.color, lineHeight: 1.4 }}>{item.value}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </LiquidCard>
-
       {/* 家庭背景 */}
       {familyData && (
         <LiquidCard title="家庭背景" style={{ marginBottom: '1.25rem' }}>
@@ -590,15 +558,16 @@ export default function StudentHome() {
             <table className="liquid-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <tbody>
                 {[
-                  { label: '母亲教育水平', value: translateFamily(familyData.mother_education) },
-                  { label: '父亲教育水平', value: translateFamily(familyData.father_education) },
+                  { label: '母亲教育水平', value: translateFamily(familyData.mother_edu) },
+                  { label: '父亲教育水平', value: translateFamily(familyData.father_edu) },
                   { label: '母亲职业', value: translateFamily(familyData.mother_job) },
                   { label: '父亲职业', value: translateFamily(familyData.father_job) },
-                  { label: '家庭支持', value: translateFamily(familyData.home_support) },
-                  { label: '家庭关系质量', value: translateFamily(familyData.family_relationship) },
-                  { label: '是否免费午餐', value: translateFamily(familyData.free_lunch) },
-                  { label: '是否课外活动', value: translateFamily(familyData.extracurricular_activities) },
-                  { label: '是否互联网接入', value: translateFamily(familyData.internet_access) },
+                  { label: '家庭支持', value: translateFamily(familyData.family_support) },
+                  { label: '家庭关系质量', value: familyData.fam_rel != null ? familyData.fam_rel : '--' },
+                  ...(studentInfo?.behavior ? [
+                    { label: '是否互联网接入', value: translateFamily(studentInfo.behavior.internet_access) },
+                    { label: '是否课外活动', value: translateFamily(studentInfo.behavior.extracurricular) },
+                  ] : []),
                 ].filter((row) => row.value !== '--').map((row, i) => (
                   <tr key={i}>
                     <td style={{ width: '40%', fontWeight: 500, color: 'rgba(11,101,101,0.65)', fontSize: '0.8125rem' }}>{row.label}</td>
